@@ -100,15 +100,6 @@ def data_processor(tmpBanned):
     email_sending(tmpBanned)
 
 
-    if stcksDeclining == True:
-        # TODO[A]:Add a component here to handle a stock that has triggered the conditon.  Temporarily place it in a "banned" list for an x amount of time.  Will call function dataBannedStock
-
-
-def data_Unbanned_stock(tmpBanned, dateToday):
-    """This function will determine if stocks should be unbanned"""
-
-
-
 def email_sending(tmpBanned):
     msg = email.message_from_string(
         'stock-bot is reported a stock decline in the following stocks \n'
