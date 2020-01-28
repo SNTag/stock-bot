@@ -48,7 +48,7 @@ apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
 """Background details"""
 tmpTimer = 1*60*60          # time interval
-s = sched.scheduler(time.time, time.sleep)
+mainTimer = sched.scheduler(time.time, time.sleep)
 tmpBanned = {}
 if os.path.isdir("./output") == False:
     os.makedirs("./output")
@@ -56,55 +56,56 @@ if os.path.isdir("./output") == False:
 
 def main():
     """Will start the application every x seconds"""
-    s.enter(tmpTimer, 1, data_processor, ())
-    s.run()
+    mainTimer.enter(tmpTimer, 1, data_processor, ())
+    print("starting again")
 
 
-def data_processor(tmpBanned):
+def data_processor():
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
+    global tmpBanned
     companiesMain = pd.read_csv("./company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
     dateToday = datetime.date.today()
     dateTwoWeeks = dateToday+datetime.timedelta(14)
-
 
     for row in range(companiesMain.shape[0]):      # for each portfolio
         for column in range(companiesMain.shape[1]):  # for each stock
             tmpStock = str(companiesMain.iloc[row,column])
 
-
             # checks if it should unban stocks
             for y in range(len(tmpBanned)):
-                if tmpBanned[tmpStock] =< dateToday:
+                if tmpBanned[tmpStock] <= dateToday:
                     tmpBanned.pop(tmpStock, None)
 
             # retrieves stock data
-	    if tmpStock in companiesBanned:
-                # IS banned
-	    else:
+            if tmpStock not in tmpBanned.keys():
                 # NOT banned (yet)
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
-                data, meta_data = ts.get_daily(symbol= 'AAPL', outputsize='full')  # should I use adjusted?
+                data, meta_data = ts.get_daily(symbol=tmpStock, outputsize='full')  # should I use adjusted?
 
-                if condition1 == False:
-                    tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+                # if condition1 == False:
+                #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
 
-                if condition2 == False:
-                    tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+                # if condition2 == False:
+                #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
 
                 data['4. close'].plot()
                 plt.title(f'Daily Times Series for the {tmpStock} stock')
                 plt.ylabel('Cost')
                 plt.savefig(f'./output/{tmpStock}.png')
+                plt.clf()
+                plt.cla()
+                plt.close()
 
     email_sending(tmpBanned)
+    main()
 
 
 def email_sending(tmpBanned):
     msg = email.message_from_string(
         'stock-bot is reported a stock decline in the following stocks \n'
         '\n'
-        f'{" ".join(str(s) for s in tmpBanned)} \n'
+        '{" ".join(str(s) for s in tmpBanned)} \n'
     )
     msg['From'] = botName
     msg['To'] = username
@@ -127,4 +128,5 @@ def email_sending(tmpBanned):
 
 """Starting the Magic!!"""
 if __name__ == '__main__':
-    main()
+    mainTimer.enter(tmpTimer, 1, data_processor, ())
+    mainTimer.run()
