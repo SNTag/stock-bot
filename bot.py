@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# File: Sontag-bot
-# Author: SNTagore (agenttiny@gmail.com)
+# File: stock-bot
+# Author: SNTag (SNTagore@protonmail.com)
 # Date: 25/01/2020
 # Description:
 # Usage:
@@ -20,7 +20,7 @@ import smtplib                                  # For emailing
 from alpha_vantage.timeseries import TimeSeries  # For Data Collection
 import matplotlib.pyplot as plt  # FOR FUN: Generates plots
 import pandas as pd             # Used to config stocks
-import sched, time              # Used to maintain scheduling
+import sched, time              # Used similar to Cron scheduling
 import datetime                 # Used to maintain banned list
 import os                       # for file, plot maintenance
 import configparser             # For soft-coding bot-config
@@ -46,22 +46,25 @@ filestamp = time.strftime('%Y-%m-%d')
 apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
 
+"""Background details"""
+tmpTimer = 1*60*60          # time interval
+s = sched.scheduler(time.time, time.sleep)
+tmpBanned = {}
+if os.path.isdir("./output") == False:
+    os.makedirs("./output")
 
 
 def main():
     """Will start the application every x seconds"""
-    s = sched.scheduler(time.time, time.sleep)
-    s.enter(5, 1, data_processor, ())
+    s.enter(tmpTimer, 1, data_processor, ())
     s.run()
 
 
-def data_processor():
+def data_processor(tmpBanned):
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
-
-    companiesMain = pd.read_csv("./company-list.csv", sep = ",", header = None, index_col = 0)
+    companiesMain = pd.read_csv("./company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
     dateToday = datetime.date.today()
     dateTwoWeeks = dateToday+datetime.timedelta(14)
-    tmpBanned = {}
 
 
     for row in range(companiesMain.shape[0]):      # for each portfolio
@@ -81,31 +84,24 @@ def data_processor():
                 # NOT banned (yet)
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
-                data, meta_data = ts.get_daily(symbol= tmpStock, outputsize='full')  # should I use adjusted?
+                data, meta_data = ts.get_daily(symbol= 'AAPL', outputsize='full')  # should I use adjusted?
 
                 if condition1 == False:
                     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
 
+                if condition2 == False:
+                    tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+
                 data['4. close'].plot()
-                plt.title(f'Intraday Times Series for the {tmpStock} stock (1 min)')
-                plt.show()
+                plt.title(f'Daily Times Series for the {tmpStock} stock')
+                plt.ylabel('Cost')
+                plt.savefig(f'./output/{tmpStock}.png')
+
+    email_sending(tmpBanned)
 
 
     if stcksDeclining == True:
         # TODO[A]:Add a component here to handle a stock that has triggered the conditon.  Temporarily place it in a "banned" list for an x amount of time.  Will call function dataBannedStock
-
-        msg = email.message_from_string(
-            'stock-bot is reported a stock decline \n'
-            '\n'
-            'following stcks {" ".join(str(s) for s in stcks)} \n'
-        )
-        msg['From'] = botName
-        msg['To'] = username
-        msg['Subject'] = "Stock Decline"
-        email_sending(msg)
-
-    ##### To save the status
-    companiesMain.to_csv("./company-list.csv", sep = ",", header = None)  # TODO[B]:make sure this is working
 
 
 def data_Unbanned_stock(tmpBanned, dateToday):
@@ -113,7 +109,17 @@ def data_Unbanned_stock(tmpBanned, dateToday):
 
 
 
-def email_sending(msg):
+def email_sending(tmpBanned):
+    msg = email.message_from_string(
+        'stock-bot is reported a stock decline in the following stocks \n'
+        '\n'
+        f'{" ".join(str(s) for s in tmpBanned)} \n'
+    )
+    msg['From'] = botName
+    msg['To'] = username
+    msg['Subject'] = "Stock Decline"
+    email_sending(msg)
+
     s = smtplib.SMTP(smtpAddress, smtpPort)
     s.ehlo() # Hostname to send for this command defaults to the fully qualified domain name of the local host.
     s.starttls() #Puts connection to SMTP server in TLS mode
@@ -128,5 +134,6 @@ def email_sending(msg):
 
 
 
+"""Starting the Magic!!"""
 if __name__ == '__main__':
     main()
