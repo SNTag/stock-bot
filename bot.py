@@ -42,44 +42,6 @@ apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
 
 
-"""Email templates here"""
-##### General templates
-# msg = email.message_from_string(
-#     'stock-bot is reported a stock decline in the following stocks \n'
-#     '\n'
-#     '{" ".join(str(s) for s in tmpBanned)} \n'
-# )
-# msg['From'] = botName
-# msg['To'] = username
-# msg['Subject'] = "Stock Decline"
-
-##### decline - condition1
-msgDecline = email.message_from_string(
-    'stock-bot is reported a stock decline in the following stocks \n'
-    '\n'
-    f'{" ".join(str(s) for s in newBanned)} \n'
-)
-msgDecline['From'] = botName
-msgDecline['To'] = username
-msgDecline['Subject'] = "Stock Decline"
-
-##### dividend payout - condition2
-msgDividendPay = email.message_from_string(
-    'stock-bot is reported a stock decline in the following stocks \n'
-    '\n'
-    '{" ".join(str(s) for s in tmpBanned)} \n'
-)
-msgDividendPay['From'] = botName
-msgDividendPay['To'] = username
-msgDividendPay['Subject'] = "Stock Decline"
-
-
-
-"""Conditions here"""
-condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
-
-
-
 """Background details"""
 tmpTimer = 1*60*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
 mainTimer = sched.scheduler(time.time, time.sleep)
@@ -93,7 +55,7 @@ if os.path.isdir("./output") == False:
 def main():
     """Will start the application every x seconds"""
     ##### Adding a short section for some quality control checking
-    global(repeatCounter)
+    global repeatCounter
     repeatCounter += 1
     subprocess.call(f"echo '{repeatCounter}' > $HOME/file.txt", shell=True)
 
@@ -168,6 +130,44 @@ def email_sending(msg, username, botName, botPass):
     s.sendmail(botName, username, msg.as_string())
 
     s.quit()
+
+
+
+"""Email templates here"""
+##### General templates
+# msg = email.message_from_string(
+#     'stock-bot is reported a stock decline in the following stocks \n'
+#     '\n'
+#     '{" ".join(str(s) for s in tmpBanned)} \n'
+# )
+# msg['From'] = botName
+# msg['To'] = username
+# msg['Subject'] = "Stock Decline"
+
+##### decline - condition1
+msgDecline = email.message_from_string(
+    'stock-bot is reported a stock decline in the following stocks \n'
+    '\n'
+    f'{" ".join(str(s) for s in newBanned)} \n'
+)
+msgDecline['From'] = botName
+msgDecline['To'] = username
+msgDecline['Subject'] = "Stock Decline"
+
+##### dividend payout - condition2
+msgDividendPay = email.message_from_string(
+    'stock-bot is reported a stock decline in the following stocks \n'
+    '\n'
+    '{" ".join(str(s) for s in tmpBanned)} \n'
+)
+msgDividendPay['From'] = botName
+msgDividendPay['To'] = username
+msgDividendPay['Subject'] = "Stock Decline"
+
+
+
+"""Conditions here"""
+condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
 
 
 
