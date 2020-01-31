@@ -24,14 +24,8 @@ import sched, time              # Used similar to Cron scheduling
 import datetime                 # Used to maintain banned list
 import os                       # for file, plot maintenance
 import configparser             # For soft-coding bot-config
-# import yaml
 
 
-
-
-"""Set the trigger conditions here"""
-#condition1 =                    # LOOKS FOR DISCREPENCIES. will be dependent on the stocks average rate or growth
-#condition2 =                    #
 
 
 """For setting the Bot-configs"""
@@ -46,10 +40,50 @@ filestamp = time.strftime('%Y-%m-%d')
 apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
 
+
+"""Email templates here"""
+##### General templates
+# msg = email.message_from_string(
+#     'stock-bot is reported a stock decline in the following stocks \n'
+#     '\n'
+#     '{" ".join(str(s) for s in tmpBanned)} \n'
+# )
+# msg['From'] = botName
+# msg['To'] = username
+# msg['Subject'] = "Stock Decline"
+
+##### decline - condition1
+msgDecline = email.message_from_string(
+    'stock-bot is reported a stock decline in the following stocks \n'
+    '\n'
+    f'{" ".join(str(s) for s in newBanned)} \n'
+)
+msgDecline['From'] = botName
+msgDecline['To'] = username
+msgDecline['Subject'] = "Stock Decline"
+
+##### dividend payout - condition2
+msgDividendPay = email.message_from_string(
+    'stock-bot is reported a stock decline in the following stocks \n'
+    '\n'
+    '{" ".join(str(s) for s in tmpBanned)} \n'
+)
+msgDividendPay['From'] = botName
+msgDividendPay['To'] = username
+msgDividendPay['Subject'] = "Stock Decline"
+
+
+
+"""Conditions here"""
+condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
+
+
+
 """Background details"""
-tmpTimer = 1*60*60          # time interval
+tmpTimer = 1*60*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
 mainTimer = sched.scheduler(time.time, time.sleep)
 tmpBanned = {}
+newBanned = []
 if os.path.isdir("./output") == False:
     os.makedirs("./output")
 
@@ -62,9 +96,16 @@ def main():
 
 def data_processor():
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
+
+    ##### Loads data
     global tmpBanned
     companiesMain = pd.read_csv("./company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
+    newBanned = []
+
+    ##### Resets the time variables
     dateToday = datetime.date.today()
+    dateTodayNYC = date.today() - timedelta(hours=8)
+    dateYesterdayNYC = date.today() - timedelta(hours=24)
     dateTwoWeeks = dateToday+datetime.timedelta(14)
 
     for row in range(companiesMain.shape[0]):      # for each portfolio
@@ -81,14 +122,21 @@ def data_processor():
                 # NOT banned (yet)
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
-                data, meta_data = ts.get_daily(symbol=tmpStock, outputsize='full')  # should I use adjusted?
+                data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
 
-                # if condition1 == False:
-                #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+                ##### determining if dividend was sent today
+                if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
+                    email_sending(msgDividendPay, newBanned, username, botName, botPass)
+
+                ##### Determine if there was a stock decline
+                if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
+                    tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+                    newBanned += tmpStock
 
                 # if condition2 == False:
                 #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
 
+                ##### plotting
                 data['4. close'].plot()
                 plt.title(f'Daily Times Series for the {tmpStock} stock')
                 plt.ylabel('Cost')
@@ -97,26 +145,18 @@ def data_processor():
                 plt.cla()
                 plt.close()
 
-    email_sending(tmpBanned)
+    ##### Send email if there is a decline
+    if len(newBanned) > 0:
+        email_sending(msgDecline, username, botName, botPass)
     main()
 
 
-def email_sending(tmpBanned):
-    msg = email.message_from_string(
-        'stock-bot is reported a stock decline in the following stocks \n'
-        '\n'
-        '{" ".join(str(s) for s in tmpBanned)} \n'
-    )
-    msg['From'] = botName
-    msg['To'] = username
-    msg['Subject'] = "Stock Decline"
-    email_sending(msg)
-
+def email_sending(msg, username, botName, botPass):
     s = smtplib.SMTP(smtpAddress, smtpPort)
     s.ehlo() # Hostname to send for this command defaults to the fully qualified domain name of the local host.
     s.starttls() #Puts connection to SMTP server in TLS mode
     s.ehlo()
-    s.login(botName, password)
+    s.login(botName, botPass)
 
     s.sendmail(botName, username, msg.as_string())
 
@@ -128,5 +168,6 @@ def email_sending(tmpBanned):
 
 """Starting the Magic!!"""
 if __name__ == '__main__':
+    from conditions import *
     mainTimer.enter(tmpTimer, 1, data_processor, ())
     mainTimer.run()
