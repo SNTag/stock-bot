@@ -24,6 +24,7 @@ import sched, time              # Used similar to Cron scheduling
 import datetime                 # Used to maintain banned list
 import os                       # for file, plot maintenance
 import configparser             # For soft-coding bot-config
+import subprocess
 
 
 
@@ -84,12 +85,18 @@ tmpTimer = 1*60*60              # as using adjusted daily, just need to check tw
 mainTimer = sched.scheduler(time.time, time.sleep)
 tmpBanned = {}
 newBanned = []
+repeatCounter = 0
 if os.path.isdir("./output") == False:
     os.makedirs("./output")
 
 
 def main():
     """Will start the application every x seconds"""
+    ##### Adding a short section for some quality control checking
+    global(repeatCounter)
+    repeatCounter += 1
+    subprocess.call(f"echo '{repeatCounter}' > $HOME/file.txt", shell=True)
+
     mainTimer.enter(tmpTimer, 1, data_processor, ())
     print("starting again")
 
