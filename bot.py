@@ -77,6 +77,9 @@ def data_processor():
     dateYesterdayNYC = date.today() - timedelta(hours=24)
     dateTwoWeeks = dateToday+datetime.timedelta(14)
 
+    """Conditions here"""
+    condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
+
     for row in range(companiesMain.shape[0]):      # for each portfolio
         for column in range(companiesMain.shape[1]):  # for each stock
             tmpStock = str(companiesMain.iloc[row,column])
@@ -165,9 +168,11 @@ msgDividendPay['To'] = username
 msgDividendPay['Subject'] = "Stock Decline"
 
 
-
-"""Conditions here"""
-condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
+##### Resets the time variables
+dateToday = datetime.date.today()
+dateTodayNYC = datetime.date.today() - datetime.timedelta(hours=8)
+dateYesterdayNYC = datetime.date.today() - datetime.timedelta(hours=24)
+dateTwoWeeks = dateToday+datetime.timedelta(14)
 
 
 
