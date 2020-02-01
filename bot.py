@@ -4,12 +4,10 @@
 # Date: 25/01/2020
 # Description:
 # Usage:
-# Version: 0.0.5
+# Version: 0.0.7
 
 # TODOLIST
-# - [C] Add network disconnection solutions
-# - [C] error handling
-# - [A] A way to stop reporting on a stock once it triggers a condition for two weeks
+# - [A] ensuring the script can keep on running on auto
 
 ##### FOR BANNED LIST
 # Need to figure out how to schedule events around a dict (key:value)
@@ -42,13 +40,12 @@ smtpPort = config.get('bot-email', 'smtpPort')    # bot email SMTP port
 filestamp = time.strftime('%Y-%m-%d')
 apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
-matplotlib.use('AGG')
-
 
 
 """Background details"""
-tmpTimer = 5*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
-mainTimer = sched.scheduler(time.time, time.sleep)
+matplotlib.use('AGG')           # Used to set matplotlib backend
+os.chdir(os.path.dirname(sys.argv[0]))  # to set working dir to where the script is
+mainTimer = 5*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
 tmpBanned = {}
 newBanned = []
 repeatCounter = 0
@@ -63,6 +60,10 @@ if os.path.isdir("./output") == False:
     os.makedirs("./output")
 
 
+
+
+
+
 def main():
     """Will start the application every x seconds"""
     ##### Adding a short section for some quality control checking
@@ -71,7 +72,7 @@ def main():
     print("Starting again")
     subprocess.call(f"echo '{repeatCounter}' > $HOME/file.txt", shell=True)
     print("starting again2")
-    Timer(5.0, data_processor).start()
+    Timer(mainTimer, data_processor).start()
 
 
 def data_processor():
@@ -84,6 +85,7 @@ def data_processor():
     newBanned = []
 
     ##### Resets the time variables
+
     dateToday = datetime.date.today()
     dateTodayNYC = datetime.date.today() - datetime.timedelta(hours=8)
     dateYesterdayNYC = datetime.date.today() - datetime.timedelta(hours=24)

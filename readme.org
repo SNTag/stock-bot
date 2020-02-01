@@ -43,11 +43,13 @@ Retrieving data from Alpha Vantage with a schedular for every x minutes
 Adding in support for config files (yaml) to enable easy modifications to stocks of interest
 *** 0.0.4
 Remodelling the config files to CSV (difficulties in using Dicts in a Banned stock list)
+*** 0.0.5
+Prevent stocks from re-triggering the email system by temporarily adding them to a 'banned stock list'
+*** 0.0.6
+Add in config files to protect confidential email details, Alpha Vantage API key.
+*** 0.0.7
+improving ability of the script to run by itself
 
 ** Future versions
-*** 0.0.5 TBD
-Prevent stocks from re-triggering the email system by temporarily adding them to a 'banned stock list'
-*** 0.0.6 TBD
-Add in config files to protect confidential email details, Alpha Vantage API key.
 *** User parameters
 Some way to set user-designed triggers
