@@ -18,6 +18,7 @@
 import email                                    # for emailing
 import smtplib                                  # For emailing
 from alpha_vantage.timeseries import TimeSeries  # For Data Collection
+import matplotlib
 import matplotlib.pyplot as plt  # FOR FUN: Generates plots
 import pandas as pd             # Used to config stocks
 import sched, time              # Used similar to Cron scheduling
@@ -25,6 +26,7 @@ import datetime                 # Used to maintain banned list
 import os                       # for file, plot maintenance
 import configparser             # For soft-coding bot-config
 import subprocess
+from threading import Timer, Event
 
 
 
@@ -40,14 +42,23 @@ smtpPort = config.get('bot-email', 'smtpPort')    # bot email SMTP port
 filestamp = time.strftime('%Y-%m-%d')
 apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
+matplotlib.use('AGG')
+
 
 
 """Background details"""
-tmpTimer = 1*60*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
+tmpTimer = 5*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
 mainTimer = sched.scheduler(time.time, time.sleep)
 tmpBanned = {}
 newBanned = []
 repeatCounter = 0
+
+##### Resets the time variables
+dateToday = datetime.date.today()
+dateTodayNYC = datetime.date.today() - datetime.timedelta(hours=8)
+dateYesterdayNYC = datetime.date.today() - datetime.timedelta(hours=24)
+dateTwoWeeks = dateToday+datetime.timedelta(14)
+
 if os.path.isdir("./output") == False:
     os.makedirs("./output")
 
@@ -57,14 +68,15 @@ def main():
     ##### Adding a short section for some quality control checking
     global repeatCounter
     repeatCounter += 1
+    print("Starting again")
     subprocess.call(f"echo '{repeatCounter}' > $HOME/file.txt", shell=True)
-
-    mainTimer.enter(tmpTimer, 1, data_processor, ())
-    print("starting again")
+    print("starting again2")
+    Timer(5.0, data_processor).start()
 
 
 def data_processor():
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
+    print("starting data processing")
 
     ##### Loads data
     global tmpBanned
@@ -73,12 +85,9 @@ def data_processor():
 
     ##### Resets the time variables
     dateToday = datetime.date.today()
-    dateTodayNYC = date.today() - timedelta(hours=8)
-    dateYesterdayNYC = date.today() - timedelta(hours=24)
+    dateTodayNYC = datetime.date.today() - datetime.timedelta(hours=8)
+    dateYesterdayNYC = datetime.date.today() - datetime.timedelta(hours=24)
     dateTwoWeeks = dateToday+datetime.timedelta(14)
-
-    """Conditions here"""
-    condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
 
     for row in range(companiesMain.shape[0]):      # for each portfolio
         for column in range(companiesMain.shape[1]):  # for each stock
@@ -100,22 +109,17 @@ def data_processor():
                 if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
                     email_sending(msgDividendPay, newBanned, username, botName, botPass)
 
-                ##### Determine if there was a stock decline
-                if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
-                    tmpBanned[tmpStock] = f'{dateTwoWeeks}'
-                    newBanned += tmpStock
+                # condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
+                # ##### Determine if there was a stock decline
+                # if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
+                #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+                #     newBanned += tmpStock
 
                 # if condition2 == False:
                 #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
 
                 ##### plotting
-                data['4. close'].plot()
-                plt.title(f'Daily Times Series for the {tmpStock} stock')
-                plt.ylabel('Cost')
-                plt.savefig(f'./output/{tmpStock}.png')
-                plt.clf()
-                plt.cla()
-                plt.close()
+                plotMaker(data, meta_data, tmpStock)
 
     ##### Send email if there is a decline
     if len(newBanned) > 0:
@@ -133,6 +137,16 @@ def email_sending(msg, username, botName, botPass):
     s.sendmail(botName, username, msg.as_string())
 
     s.quit()
+
+
+def plotMaker(data, meta_data, tmpStock):
+    data['4. close'].plot()
+    plt.title(f'Daily Times Series for the {tmpStock} stock')
+    plt.ylabel('Cost')
+    plt.savefig(f'./output/{tmpStock}.png')
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 
 
@@ -168,18 +182,9 @@ msgDividendPay['To'] = username
 msgDividendPay['Subject'] = "Stock Decline"
 
 
-##### Resets the time variables
-dateToday = datetime.date.today()
-dateTodayNYC = datetime.date.today() - datetime.timedelta(hours=8)
-dateYesterdayNYC = datetime.date.today() - datetime.timedelta(hours=24)
-dateTwoWeeks = dateToday+datetime.timedelta(14)
-
-
 
 
 
 """Starting the Magic!!"""
 if __name__ == '__main__':
-    from conditions import *
-    mainTimer.enter(tmpTimer, 1, data_processor, ())
-    mainTimer.run()
+    main()
