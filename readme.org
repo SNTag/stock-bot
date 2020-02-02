@@ -4,10 +4,10 @@ A Stock Bot to keep me updated on my investments.  I am a lazy investor; once I 
 
 Currently, the system will pull stock data every 1 hr, and see if they are declining or have a dividend payout.
 
-*NOTE 1* Because of where the config file has to be placed currently, it will only work on linux for now.
-*NOTE 2* Only works with Alpha Vantage, I do not plan to configure it otherwise.
-*NOTE 3* Does not save status currently.  Everything will reset if script is stopped.
-*NOTE 4* User defined trigger conditions cannot be set without modifying the base script file for now.
+*NOTE 1* Because of where the config file has to be placed currently, it will only work on linux for now. <br />
+*NOTE 2* Only works with Alpha Vantage, I do not plan to configure it otherwise. <br />
+*NOTE 3* Does not save status currently.  Everything will reset if script is stopped. <br />
+*NOTE 4* User defined trigger conditions cannot be set without modifying the base script file for now. <br />
 
 * To Use
 
@@ -49,7 +49,3 @@ Prevent stocks from re-triggering the email system by temporarily adding them to
 Add in config files to protect confidential email details, Alpha Vantage API key.
 *** 0.0.7
 improving ability of the script to run by itself
-
-** Future versions
-*** User parameters
-Some way to set user-designed triggers

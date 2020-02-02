@@ -7,10 +7,14 @@
 # Version: 0.0.7
 
 # TODOLIST
-# - [A] ensuring the script can keep on running on auto
-
-##### FOR BANNED LIST
-# Need to figure out how to schedule events around a dict (key:value)
+# - [B] Add option to analyze similar companies relative to the stock of Interest
+# - [A] Add time settings based on UTC, not GMT
+# - [A] check at specific time (instead of just every x hours), so as to minimize read/write to SD card and limit data inaccuracy
+# - [C] Add R graph processing instead of matplotlib
+# - [A] Add on-the-fly updating of conditions of interest (PROBABLY REQUIRES MAJOR REORGANIZATION)
+# - [B] Improve processing capabilities on current stock situations (such as through bta-lib)
+# - [C] Add 'progress' saving (lists saved to text files for example)
+# - [C] Improve internal data to hopefully limit wasted read/write (don't overwrite data, meta-data every time)
 
 
 import email                                    # for emailing
@@ -19,12 +23,15 @@ from alpha_vantage.timeseries import TimeSeries  # For Data Collection
 import matplotlib
 import matplotlib.pyplot as plt  # FOR FUN: Generates plots
 import pandas as pd             # Used to config stocks
-import sched, time              # Used similar to Cron scheduling
-import datetime                 # Used to maintain banned list
+import time
+import schedule
+import datetime as dt           # Used to maintain banned list
 import os                       # for file, plot maintenance
 import configparser             # For soft-coding bot-config
 import subprocess
 from threading import Timer, Event
+import sys
+from dateutil.tz import gettz
 
 
 
@@ -44,20 +51,28 @@ apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
-os.chdir(os.path.dirname(sys.argv[0]))  # to set working dir to where the script is
-mainTimer = 5*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
-tmpBanned = {}
-newBanned = []
-repeatCounter = 0
+mainTimer = 11*60*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
+tmpBanned = {}                    # holds for long term banning
+newBanned = []                    # stocks that are just discovered to be bannable
+repeatCounter = 0                 # minor quality check
+newDividend = []                  # stocks that are paying a dividend today
 
-##### Resets the time variables
-dateToday = datetime.date.today()
-dateTodayNYC = datetime.date.today() - datetime.timedelta(hours=8)
-dateYesterdayNYC = datetime.date.today() - datetime.timedelta(hours=24)
-dateTwoWeeks = dateToday+datetime.timedelta(14)
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 if os.path.isdir("./output") == False:
     os.makedirs("./output")
+
+
+"""Sets the time variables"""
+dt.datetime.now(gettz("America/New_York")).isoformat()
+
+##### needs to be the same as in data_processor()
+dateToday = dt.date.today()
+dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)
+dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)
+dateTwoWeeks = dateToday+dt.timedelta(14)
 
 
 
@@ -66,53 +81,51 @@ if os.path.isdir("./output") == False:
 
 def main():
     """Will start the application every x seconds"""
-    ##### Adding a short section for some quality control checking
+    ##### Adding a short section for basic quality control checking (simple way of counting # of runs)
     global repeatCounter
     repeatCounter += 1
-    print("Starting again")
     subprocess.call(f"echo '{repeatCounter}' > $HOME/file.txt", shell=True)
-    print("starting again2")
-    Timer(mainTimer, data_processor).start()
+
+    Timer(mainTimer, data_processor).start()  # Will start dataprocessing (replacing with Sched and UTC -5 (NYC) detection)
+
 
 
 def data_processor():
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
-    print("starting data processing")
-
-    ##### Loads data
+    ##### Loads companies of interest
     global tmpBanned
     companiesMain = pd.read_csv("./company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
     newBanned = []
 
     ##### Resets the time variables
+    dateToday = dt.date.today()
+    dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)
+    dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)
+    dateTwoWeeks = dateToday+dt.timedelta(14)
 
-    dateToday = datetime.date.today()
-    dateTodayNYC = datetime.date.today() - datetime.timedelta(hours=8)
-    dateYesterdayNYC = datetime.date.today() - datetime.timedelta(hours=24)
-    dateTwoWeeks = dateToday+datetime.timedelta(14)
 
+    ##### pulls stock data and checks for conditions
     for row in range(companiesMain.shape[0]):      # for each portfolio
         for column in range(companiesMain.shape[1]):  # for each stock
+            print(f"analyzing {tmpStock}")
             tmpStock = str(companiesMain.iloc[row,column])
 
-            # checks if it should unban stocks
-            for y in range(len(tmpBanned)):
+            for y in range(len(tmpBanned)):  # checks if it should unban stocks
                 if tmpBanned[tmpStock] <= dateToday:
                     tmpBanned.pop(tmpStock, None)
 
-            # retrieves stock data
-            if tmpStock not in tmpBanned.keys():
+            if tmpStock not in tmpBanned.keys():  # retrieves stock data
                 # NOT banned (yet)
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
                 data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
 
-                ##### determining if dividend was sent today
+                ##### CONDITION1: determining if dividend was sent today
                 if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
-                    email_sending(msgDividendPay, newBanned, username, botName, botPass)
+                    newDividend.append(tmpStock)
 
                 # condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
-                # ##### Determine if there was a stock decline
+                # ##### CONDITION2: Determine if there was a stock decline
                 # if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
                 #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
                 #     newBanned += tmpStock
@@ -123,7 +136,14 @@ def data_processor():
                 ##### plotting
                 plotMaker(data, meta_data, tmpStock)
 
-    ##### Send email if there is a decline
+                ##### Save data (for further possible processing)
+
+
+            time.sleep(12.5)                            # introduced to handle the limitations of AV calls per minute
+
+    ##### Send email(s) if conditions were met
+    if len(newDividend) > 0:
+        email_sending(msgDividendPay, newBanned, username, botName, botPass)
     if len(newBanned) > 0:
         email_sending(msgDecline, username, botName, botPass)
     main()
@@ -142,6 +162,7 @@ def email_sending(msg, username, botName, botPass):
 
 
 def plotMaker(data, meta_data, tmpStock):
+    print(f"Making graphs for {tmpStock}")
     data['4. close'].plot()
     plt.title(f'Daily Times Series for the {tmpStock} stock')
     plt.ylabel('Cost')
@@ -175,13 +196,13 @@ msgDecline['Subject'] = "Stock Decline"
 
 ##### dividend payout - condition2
 msgDividendPay = email.message_from_string(
-    'stock-bot is reported a stock decline in the following stocks \n'
+    'stock-bot is reporting a dividend payout in the following stocks \n'
     '\n'
-    '{" ".join(str(s) for s in tmpBanned)} \n'
+    f'{" ".join(str(s) for s in newDividend)} \n'
 )
 msgDividendPay['From'] = botName
 msgDividendPay['To'] = username
-msgDividendPay['Subject'] = "Stock Decline"
+msgDividendPay['Subject'] = "Dividend payout"
 
 
 
