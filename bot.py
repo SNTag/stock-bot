@@ -54,8 +54,15 @@ apiKey = config.get('AV', 'apiKey')            # Alpha Vantage API key
 
 
 """Loading json file (contains lists,dicts,variables of interest)"""
-with open('./data/status.json') as jsonIn:
-    dataStatus = json.load(jsonIn)
+if os.path.isfile("./data/status.json"):
+    with open('./data/status.json') as jsonIn:
+        dataStatus = json.load(jsonIn)
+else:
+    oldBanned = {}
+    repeatCounter = 0
+    dataStatus = {}
+    dataStatus["oldBanned"] = oldBanned
+    dataStatus["repeatCounter"] = repeatCounter
 
 
 """Background details"""
@@ -89,7 +96,7 @@ dateTwoWeeks = dateToday+dt.timedelta(14)
 def main():
     """Will start the application every x seconds"""
     ##### Adding a short section for basic quality control checking (simple way of counting # of runs)
-    global repeatCounter        # See if i can remove this line
+#    global repeatCounter        # See if i can remove this line
     dataStatus["repeatCounter"] += 1
     data_processor()
 
