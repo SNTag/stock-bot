@@ -7,31 +7,34 @@
 # Version: 0.0.7
 
 # TODOLIST
-# - [B] Add option to analyze similar companies relative to the stock of Interest
-# - [A] Add time settings based on UTC, not GMT
-# - [A] check at specific time (instead of just every x hours), so as to minimize read/write to SD card and limit data inaccuracy
-# - [C] Add R graph processing instead of matplotlib
-# - [A] Add on-the-fly updating of conditions of interest (PROBABLY REQUIRES MAJOR REORGANIZATION)
-# - [B] Improve processing capabilities on current stock situations (such as through bta-lib)
-# - [C] Add 'progress' saving (lists saved to text files for example)
-# - [C] Improve internal data to hopefully limit wasted read/write (don't overwrite data, meta-data every time)
+# - [C] Add option to analyze similar companies relative to the stock of Interest.
+# - [A] check at specific time (instead of just every x hours), so as to minimize read/write to SD card and limit data inaccuracy.  NOTE: do this through crontab
+# - [B] Add R graph processing instead of matplotlib
+# - [B] Add on-the-fly updating of conditions of interest (PROBABLY REQUIRES MAJOR REORGANIZATION)
+# - [C] Improve processing capabilities on current stock situations (such as through bta-lib)
+# - [A] Add 'progress' saving (lists saved to text files for example)
+# - [A] Improve internal data to hopefully limit wasted read/write (don't overwrite data, meta-data every time)
+# NOTE: TODEL are items that will probably be removed when a novel time record system is added.
 
 
-import email                                    # for emailing
-import smtplib                                  # For emailing
+import email                    # for emailing
+import smtplib                  # For emailing
 from alpha_vantage.timeseries import TimeSeries  # For Data Collection
-import matplotlib
-import matplotlib.pyplot as plt  # FOR FUN: Generates plots
+import matplotlib               # loaded to set matplotlib backend
+import matplotlib.pyplot as plt # FOR FUN: Generates plots
 import pandas as pd             # Used to config stocks
-import time
-import schedule
+import time                     # Time tracking
+import schedule                 # TODEL: will be deprecated later
 import datetime as dt           # Used to maintain banned list
-import os                       # for file, plot maintenance
+import os                       # For file/plot
 import configparser             # For soft-coding bot-config
-import subprocess
-from threading import Timer, Event
-import sys
-from dateutil.tz import gettz
+import subprocess               # For some quick quality checking
+import json                     # For reading/saving to json
+import sys                      # needed
+from threading import Timer, Event  # TODEL: will be deprecated later
+from dateutil.tz import gettz   # TODEL: will be deprecated later
+
+
 
 
 
@@ -48,10 +51,9 @@ filestamp = time.strftime('%Y-%m-%d')
 apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
 
 
-
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
-mainTimer = 11*60*60              # as using adjusted daily, just need to check twice everyday.  Counted in seconds
+mainTimer = 11*60*60              # TODEL# as using adjusted daily, just need to check twice everyday.  Counted in seconds
 tmpBanned = {}                    # holds for long term banning
 newBanned = []                    # stocks that are just discovered to be bannable
 repeatCounter = 0                 # minor quality check
@@ -63,11 +65,11 @@ os.chdir(dname)
 
 if os.path.isdir("./output") == False:
     os.makedirs("./output")
+if os.path.isdir("./data") == False:
+    os.makedirs("./data")
 
 
 """Sets the time variables"""
-dt.datetime.now(gettz("America/New_York")).isoformat()
-
 ##### needs to be the same as in data_processor()
 dateToday = dt.date.today()
 dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)
@@ -85,9 +87,7 @@ def main():
     global repeatCounter
     repeatCounter += 1
     subprocess.call(f"echo '{repeatCounter}' > $HOME/file.txt", shell=True)
-
-    Timer(mainTimer, data_processor).start()  # Will start dataprocessing (replacing with Sched and UTC -5 (NYC) detection)
-
+    Timer(mainTimer, data_processor).start()  # TODEL#Will start dataprocessing (replacing with Sched and UTC -5 (NYC) detection)
 
 
 def data_processor():
@@ -173,6 +173,9 @@ def plotMaker(data, meta_data, tmpStock):
 
 
 
+
+
+
 """Email templates here"""
 ##### General templates
 # msg = email.message_from_string(
@@ -203,6 +206,7 @@ msgDividendPay = email.message_from_string(
 msgDividendPay['From'] = botName
 msgDividendPay['To'] = username
 msgDividendPay['Subject'] = "Dividend payout"
+
 
 
 
