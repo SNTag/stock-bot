@@ -15,6 +15,8 @@
 # - [A] Add 'progress' saving (lists saved to text files for example)
 # - [A] Improve internal data to hopefully limit wasted read/write (don't overwrite data, meta-data every time)
 # NOTE: TODEL are items that will probably be removed when a novel time record system is added.
+# - [C] Change how stocks are read (instead of CSV file)?
+# - [B] Add UTC to time variables (so that it can easily understand AV data regardless of laptop timezone)
 
 
 import email                    # for emailing
@@ -41,23 +43,25 @@ from dateutil.tz import gettz   # TODEL: will be deprecated later
 
 """For setting the Bot-configs"""
 config = configparser.ConfigParser()
-config.read("/etc/bot-login.cnf")
-username = config.get('bot-email', 'username')  # address the bot will talk with
-botName = config.get('bot-email', 'botName')    # bot email address
-botPass = config.get('bot-email', 'botPass')    # bot email password
-smtpAddress = config.get('bot-email', 'smtpAddress')    # bot email SMTP address
-smtpPort = config.get('bot-email', 'smtpPort')    # bot email SMTP port
-filestamp = time.strftime('%Y-%m-%d')
-apiKey = config.get('AV', 'apiKey')    # Alpha Vantage API key
+config.read("/etc/bot-login.cnf")              # Config location
+username = config.get('bot-email', 'username') # address the bot will talk with
+botName = config.get('bot-email', 'botName')   # bot email address
+botPass = config.get('bot-email', 'botPass')   # bot email password
+smtpAddress = config.get('bot-email', 'smtpAddress') # bot email SMTP address
+smtpPort = config.get('bot-email', 'smtpPort') # bot email SMTP port
+filestamp = time.strftime('%Y-%m-%d')          # isn't this unnecessary
+apiKey = config.get('AV', 'apiKey')            # Alpha Vantage API key
+
+
+"""Loading json file (contains lists,dicts,variables of interest)"""
+with open('./data/status.json') as jsonIn:
+    dataStatus = json.load(jsonIn)
 
 
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
-mainTimer = 11*60*60              # TODEL# as using adjusted daily, just need to check twice everyday.  Counted in seconds
-tmpBanned = {}                    # holds for long term banning
-newBanned = []                    # stocks that are just discovered to be bannable
-repeatCounter = 0                 # minor quality check
-newDividend = []                  # stocks that are paying a dividend today
+newBanned = []                  # stocks that are just discovered to be bannable
+newDividend = []                # stocks that are paying a dividend today
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -70,7 +74,6 @@ if os.path.isdir("./data") == False:
 
 
 """Sets the time variables"""
-##### needs to be the same as in data_processor()
 dateToday = dt.date.today()
 dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)
 dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)
@@ -81,40 +84,34 @@ dateTwoWeeks = dateToday+dt.timedelta(14)
 
 
 
+
+
 def main():
     """Will start the application every x seconds"""
     ##### Adding a short section for basic quality control checking (simple way of counting # of runs)
-    global repeatCounter
-    repeatCounter += 1
-    subprocess.call(f"echo '{repeatCounter}' > $HOME/file.txt", shell=True)
-    Timer(mainTimer, data_processor).start()  # TODEL#Will start dataprocessing (replacing with Sched and UTC -5 (NYC) detection)
+    global repeatCounter        # See if i can remove this line
+    dataStatus["repeatCounter"] += 1
+    data_processor()
 
 
 def data_processor():
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
     ##### Loads companies of interest
-    global tmpBanned
-    companiesMain = pd.read_csv("./company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
+    companiesMain = pd.read_csv("./data/company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
     newBanned = []
-
-    ##### Resets the time variables
-    dateToday = dt.date.today()
-    dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)
-    dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)
-    dateTwoWeeks = dateToday+dt.timedelta(14)
-
 
     ##### pulls stock data and checks for conditions
     for row in range(companiesMain.shape[0]):      # for each portfolio
         for column in range(companiesMain.shape[1]):  # for each stock
-            print(f"analyzing {tmpStock}")
             tmpStock = str(companiesMain.iloc[row,column])
+            print(f"analyzing {tmpStock}")
 
-            for y in range(len(tmpBanned)):  # checks if it should unban stocks
-                if tmpBanned[tmpStock] <= dateToday:
-                    tmpBanned.pop(tmpStock, None)
+            for y in range(len(dataStatus["oldBanned"])):  # checks if it should unban stocks
+                dateTmp = datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()
+                if dateTmp < dateTwoWeeks:
+                    dataStatus["oldBanned"].pop(tmpStock, None)
 
-            if tmpStock not in tmpBanned.keys():  # retrieves stock data
+            if tmpStock not in dataStatus["oldBanned"].keys():  # retrieves stock data
                 # NOT banned (yet)
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
@@ -127,29 +124,30 @@ def data_processor():
                 # condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
                 # ##### CONDITION2: Determine if there was a stock decline
                 # if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
-                #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+                #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
                 #     newBanned += tmpStock
 
                 # if condition2 == False:
-                #     tmpBanned[tmpStock] = f'{dateTwoWeeks}'
+                #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
 
                 ##### plotting
                 plotMaker(data, meta_data, tmpStock)
 
-                ##### Save data (for further possible processing)
-
-
-            time.sleep(12.5)                            # introduced to handle the limitations of AV calls per minute
+            time.sleep(12.5)                            # makes script compatible with AV calls per minute limit
 
     ##### Send email(s) if conditions were met
     if len(newDividend) > 0:
         email_sending(msgDividendPay, newBanned, username, botName, botPass)
     if len(newBanned) > 0:
         email_sending(msgDecline, username, botName, botPass)
-    main()
+
+    ##### Save data in json file (see ./data/status.json)
+    with open('./data/status.json', 'w') as jsonOut:
+        json.dump(dataStatus, jsonOut, indent=4)
 
 
 def email_sending(msg, username, botName, botPass):
+    """Will send relevant messages"""
     s = smtplib.SMTP(smtpAddress, smtpPort)
     s.ehlo() # Hostname to send for this command defaults to the fully qualified domain name of the local host.
     s.starttls() #Puts connection to SMTP server in TLS mode
@@ -181,7 +179,7 @@ def plotMaker(data, meta_data, tmpStock):
 # msg = email.message_from_string(
 #     'stock-bot is reported a stock decline in the following stocks \n'
 #     '\n'
-#     '{" ".join(str(s) for s in tmpBanned)} \n'
+#     '{" ".join(str(s) for s in dataStatus["oldBanned"])} \n'
 # )
 # msg['From'] = botName
 # msg['To'] = username
