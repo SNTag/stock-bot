@@ -4,19 +4,7 @@
 # Date: 25/01/2020
 # Description:
 # Usage:
-# Version: 0.0.7
-
-# TODOLIST
-# - [C] Add option to analyze similar companies relative to the stock of Interest.
-# - [A] check at specific time (instead of just every x hours), so as to minimize read/write to SD card and limit data inaccuracy.  NOTE: do this through crontab
-# - [B] Add R graph processing instead of matplotlib
-# - [B] Add on-the-fly updating of conditions of interest (PROBABLY REQUIRES MAJOR REORGANIZATION)
-# - [C] Improve processing capabilities on current stock situations (such as through bta-lib)
-# - [A] Add 'progress' saving (lists saved to text files for example)
-# - [A] Improve internal data to hopefully limit wasted read/write (don't overwrite data, meta-data every time)
-# NOTE: TODEL are items that will probably be removed when a novel time record system is added.
-# - [C] Change how stocks are read (instead of CSV file)?
-# - [B] Add UTC to time variables (so that it can easily understand AV data regardless of laptop timezone)
+# Version: 0.0.8
 
 
 import email                    # for emailing
@@ -53,18 +41,6 @@ filestamp = time.strftime('%Y-%m-%d')          # isn't this unnecessary
 apiKey = config.get('AV', 'apiKey')            # Alpha Vantage API key
 
 
-"""Loading json file (contains lists,dicts,variables of interest)"""
-if os.path.isfile("./data/status.json"):
-    with open('./data/status.json') as jsonIn:
-        dataStatus = json.load(jsonIn)
-else:
-    oldBanned = {}
-    repeatCounter = 0
-    dataStatus = {}
-    dataStatus["oldBanned"] = oldBanned
-    dataStatus["repeatCounter"] = repeatCounter
-
-
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
 newBanned = []                  # stocks that are just discovered to be bannable
@@ -78,6 +54,18 @@ if os.path.isdir("./output") == False:
     os.makedirs("./output")
 if os.path.isdir("./data") == False:
     os.makedirs("./data")
+
+
+"""Loading json file (contains lists,dicts,variables of interest)"""
+if os.path.isfile("./data/status.json"):
+    with open('./data/status.json') as jsonIn:
+        dataStatus = json.load(jsonIn)
+else:
+    oldBanned = {}
+    repeatCounter = 0
+    dataStatus = {}
+    dataStatus["oldBanned"] = oldBanned
+    dataStatus["repeatCounter"] = repeatCounter
 
 
 """Sets the time variables"""
@@ -94,15 +82,11 @@ dateTwoWeeks = dateToday+dt.timedelta(14)
 
 
 def main():
-    """Will start the application every x seconds"""
-    ##### Adding a short section for basic quality control checking (simple way of counting # of runs)
-#    global repeatCounter        # See if i can remove this line
-    dataStatus["repeatCounter"] += 1
-    data_processor()
-
-
-def data_processor():
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
+    ##### Adding a short section for basic quality control checking (simple way of counting # of runs)
+    global dataStatus
+    dataStatus["repeatCounter"] += 1
+
     ##### Loads companies of interest
     companiesMain = pd.read_csv("./data/company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
     newBanned = []
