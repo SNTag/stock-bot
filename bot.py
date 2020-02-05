@@ -95,38 +95,39 @@ def main():
     ##### pulls stock data and checks for conditions
     for row in range(companiesMain.shape[0]):      # for each portfolio
         for column in range(companiesMain.shape[1]):  # for each stock
-            tmpStock = str(companiesMain.iloc[row,column])
-            print(f"analyzing {tmpStock}")
+            if not pd.isnull(companiesMain.iloc[row,column]):
+                tmpStock = str(companiesMain.iloc[row,column])
+                print(f"analyzing {tmpStock}")
 
-            for y in range(len(dataStatus["oldBanned"])):  # checks if it should unban stocks
-                dateTmp = datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
-                if dateTmp < dateTwoWeeks:
-                    dataStatus["oldBanned"].pop(tmpStock, None)
+                for y in range(len(dataStatus["oldBanned"])):  # checks if it should unban stocks
+                    dateTmp = datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
+                    if dateTmp < dateTwoWeeks:
+                        dataStatus["oldBanned"].pop(tmpStock, None)
 
-            if tmpStock not in dataStatus["oldBanned"].keys():  # retrieves stock data
-                # NOT banned (yet)
-                # If conditon(s) failed, will trigger email and be added to banned list
-                ts = TimeSeries(key=apiKey, output_format='pandas')
-                data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
+                if tmpStock not in dataStatus["oldBanned"].keys():  # retrieves stock data
+                    # NOT banned (yet)
+                    # If conditon(s) failed, will trigger email and be added to banned list
+                    ts = TimeSeries(key=apiKey, output_format='pandas')
+                    data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
 
-                ##### CONDITION1: determining if dividend was sent today
-                if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
-                    newDividend.append(tmpStock)
+                    ##### CONDITION1: determining if dividend was sent today
+                    if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
+                        newDividend.append(tmpStock)
 
-                # condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
-                # ##### CONDITION2: Determine if there was a stock decline
-                # if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
-                #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
-                #     newBanned += tmpStock
+                    # condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
+                    # ##### CONDITION2: Determine if there was a stock decline
+                    # if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
+                    #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
+                    #     newBanned += tmpStock
 
-                # if condition2 == False:
-                #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
+                    # if condition2 == False:
+                    #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
 
-                ##### Save data as CSV for processing as desired
-                data.to_csv(f"./output/data/{tmpStock}-{dateToday}.csv", index = True, )
+                    ##### Save data as CSV for processing as desired
+                    data.to_csv(f"./output/data/{tmpStock}-{dateToday}.csv", index = True, )
 
-                ##### plotting
-                plotMaker(data, meta_data, tmpStock)
+                    ##### plotting
+                    plotMaker(data, meta_data, tmpStock)
 
             time.sleep(12.5)                            # makes script compatible with AV calls per minute limit
 
@@ -208,3 +209,11 @@ msgDividendPay['Subject'] = "Dividend payout"
 """Starting the Magic!!"""
 if __name__ == '__main__':
     main()
+
+
+
+# for row in range(companiesMain.shape[0]):      # for each portfolio
+#     for column in range(companiesMain.shape[1]):  # for each stock
+#         if not pd.isnull(companiesMain.iloc[row,column]):  # if not null, continue
+#             tmpStock = str(companiesMain.iloc[row,column])
+#             print(f"{tmpStock}")
