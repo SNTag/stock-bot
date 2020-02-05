@@ -69,11 +69,12 @@ else:
     dataStatus["repeatCounter"] = repeatCounter
 
 
+
 """Sets the time variables"""
 dateToday = dt.date.today()
 dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)
 dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)
-dateTwoWeeks = dateToday+dt.timedelta(14)
+dateTwoWeeks = dateToday - dt.timedelta(14)
 
 
 
@@ -99,8 +100,8 @@ def main():
                 tmpStock = str(companiesMain.iloc[row,column])
                 print(f"analyzing {tmpStock}")
 
-                for y in range(len(dataStatus["oldBanned"])):  # checks if it should unban stocks
-                    dateTmp = datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
+                if tmpStock in dataStatus["oldBanned"]:
+                    dateTmp = dt.datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
                     if dateTmp < dateTwoWeeks:
                         dataStatus["oldBanned"].pop(tmpStock, None)
 
@@ -110,15 +111,15 @@ def main():
                     ts = TimeSeries(key=apiKey, output_format='pandas')
                     data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
 
-                    ##### CONDITION1: determining if dividend was sent today
+                    ##### CONDITION1: dividend checker
                     if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
                         newDividend.append(tmpStock)
 
-                    # condition1 = (data["4. adjusted close"][dateTodayNYC])/(data["4. adjusted close"][dateYesterdayNYC])
-                    # ##### CONDITION2: Determine if there was a stock decline
-                    # if (((1-condition1)*100) >= 10) or (((1-condition1)*100) <= 10):
-                    #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
-                    #     newBanned += tmpStock
+                    ##### CONDITION2: Determine if there was a stock decline
+                    condition2 = (data["5. adjusted close"][0])/(data["5. adjusted close"][1])
+                    if (0.9 < (1-condition2) < 1.1):
+                        dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
+                        newBanned.append(tmpStock)
 
                     # if condition2 == False:
                     #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
@@ -131,11 +132,12 @@ def main():
 
             time.sleep(12.5)                            # makes script compatible with AV calls per minute limit
 
-    ##### Send email(s) if conditions were met
-    if len(newDividend) > 0:
-        email_sending(msgDividendPay, newBanned, username, botName, botPass)
-    if len(newBanned) > 0:
-        email_sending(msgDecline, username, botName, botPass)
+    # ##### Send email(s) if conditions were met
+    # if len(newDividend) > 0:
+    #     email_sending(msgDividendPay, newBanned, username, botName, botPass)
+
+    # if len(newBanned) > 0:
+    #     email_sending(msgDecline, username, botName, botPass)
 
     ##### Save status in json file (see ./input/status.json)
     with open('./input/status.json', 'w') as jsonOut:
