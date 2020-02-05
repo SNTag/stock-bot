@@ -33,6 +33,10 @@ apiKey=(YOUR Alpha Vantage API KEY HERE)
 
 To run, you can either add it to your computer's start-up scripts or run it from a terminal.  The software will generate text files that will keep track of what it did last.
 
+** To set up crontab
+
+set up crontab to run daily at
+
 * Versions
 ** version history
 *** 0.0.1
@@ -49,3 +53,17 @@ Prevent stocks from re-triggering the email system by temporarily adding them to
 Add in config files to protect confidential email details, Alpha Vantage API key.
 *** 0.0.7
 improving ability of the script to run by itself
+*** 0.0.8
+Switched fully to a json config file.  use crontab to run every day at 7PM instead (see setup)
+** TO-DO list
+*** [C] Add option to analyze similar companies relative to the stock of Interest.
+*** [A] check at specific time (instead of just every x hours), so as to minimize read/write to SD card and limit data inaccuracy.  NOTE: do this through crontab
+*** [B] Add R graph processing instead of matplotlib
+*** [B] Add on-the-fly updating of conditions of interest (PROBABLY REQUIRES MAJOR REORGANIZATION)
+*** [C] Improve processing capabilities on current stock situations (such as through bta-lib)
+*** [A] Add 'progress' saving (lists saved to text files for example)
+*** [A] Improve internal data to hopefully limit wasted read/write (don't overwrite data, meta-data every time)
+*** [C] Change how stocks are read (instead of CSV file)?
+Could try using another json file for example.
+*** [B] Add UTC to time variables (so that it can easily understand AV data regardless of laptop timezone)
+*** [C] When saving data, add a way to just add to pre-existing csv file.

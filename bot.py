@@ -14,15 +14,12 @@ import matplotlib               # loaded to set matplotlib backend
 import matplotlib.pyplot as plt # FOR FUN: Generates plots
 import pandas as pd             # Used to config stocks
 import time                     # Time tracking
-import schedule                 # TODEL: will be deprecated later
 import datetime as dt           # Used to maintain banned list
 import os                       # For file/plot
 import configparser             # For soft-coding bot-config
 import subprocess               # For some quick quality checking
 import json                     # For reading/saving to json
 import sys                      # needed
-from threading import Timer, Event  # TODEL: will be deprecated later
-from dateutil.tz import gettz   # TODEL: will be deprecated later
 
 
 
@@ -43,7 +40,7 @@ apiKey = config.get('AV', 'apiKey')            # Alpha Vantage API key
 
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
-newBanned = []                  # stocks that are just discovered to be bannable
+newBanned = []                  # stocks that are just discovered to be ban-nable
 newDividend = []                # stocks that are paying a dividend today
 
 abspath = os.path.abspath(__file__)
@@ -52,13 +49,17 @@ os.chdir(dname)
 
 if os.path.isdir("./output") == False:
     os.makedirs("./output")
-if os.path.isdir("./data") == False:
-    os.makedirs("./data")
+    if os.path.isdir("./output/graph") == False:
+        os.makedirs("./output/graph")
+    if os.path.isdir("./output/data") == False:
+        os.makedirs("./output/data")
+if os.path.isdir("./input") == False:
+    os.makedirs("./input")
 
 
 """Loading json file (contains lists,dicts,variables of interest)"""
-if os.path.isfile("./data/status.json"):
-    with open('./data/status.json') as jsonIn:
+if os.path.isfile("./input/status.json"):
+    with open('./input/status.json') as jsonIn:
         dataStatus = json.load(jsonIn)
 else:
     oldBanned = {}
@@ -88,7 +89,7 @@ def main():
     dataStatus["repeatCounter"] += 1
 
     ##### Loads companies of interest
-    companiesMain = pd.read_csv("./data/company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
+    companiesMain = pd.read_csv("./input/company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
     newBanned = []
 
     ##### pulls stock data and checks for conditions
@@ -98,7 +99,7 @@ def main():
             print(f"analyzing {tmpStock}")
 
             for y in range(len(dataStatus["oldBanned"])):  # checks if it should unban stocks
-                dateTmp = datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()
+                dateTmp = datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
                 if dateTmp < dateTwoWeeks:
                     dataStatus["oldBanned"].pop(tmpStock, None)
 
@@ -121,6 +122,9 @@ def main():
                 # if condition2 == False:
                 #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
 
+                ##### Save data as CSV for processing as desired
+                data.to_csv(f"./output/data/{tmpStock}-{dateToday}.csv", index = True, )
+
                 ##### plotting
                 plotMaker(data, meta_data, tmpStock)
 
@@ -132,8 +136,8 @@ def main():
     if len(newBanned) > 0:
         email_sending(msgDecline, username, botName, botPass)
 
-    ##### Save data in json file (see ./data/status.json)
-    with open('./data/status.json', 'w') as jsonOut:
+    ##### Save status in json file (see ./input/status.json)
+    with open('./input/status.json', 'w') as jsonOut:
         json.dump(dataStatus, jsonOut, indent=4)
 
 
@@ -155,7 +159,7 @@ def plotMaker(data, meta_data, tmpStock):
     data['4. close'].plot()
     plt.title(f'Daily Times Series for the {tmpStock} stock')
     plt.ylabel('Cost')
-    plt.savefig(f'./output/{tmpStock}.png')
+    plt.savefig(f'./output/graphs/{tmpStock}.png')
     plt.clf()
     plt.cla()
     plt.close()
