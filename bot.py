@@ -38,6 +38,7 @@ filestamp = time.strftime('%Y-%m-%d')          # isn't this unnecessary
 apiKey = config.get('AV', 'apiKey')            # Alpha Vantage API key
 outputDailyTimeSeries = config.get('Data', 'stock-bot-daily-timeseries') # to set up custom output folders
 outputGraphs = config.get('Data', 'stock-bot-graphs') # to set up custom output folders
+inputSummary = config.get('Data', 'portfolio-summary') # to set up custom output folders
 
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
@@ -92,7 +93,7 @@ def main():
     dataStatus["repeatCounter"] += 1
 
     ##### Loads companies of interest
-    companiesMain = pd.read_csv("./input/portfolio-summary.csv", sep = ",")
+    companiesMain = pd.read_csv(inputSummary, sep = ",")
     newBanned = []
 
     ##### pulls stock data and checks for conditions
