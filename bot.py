@@ -4,7 +4,7 @@
 # Date: 25/01/2020
 # Description:
 # Usage:
-# Version: 0.0.8
+# Version: 0.0.9
 
 
 import email                    # for emailing
@@ -36,7 +36,8 @@ smtpAddress = config.get('bot-email', 'smtpAddress') # bot email SMTP address
 smtpPort = config.get('bot-email', 'smtpPort') # bot email SMTP port
 filestamp = time.strftime('%Y-%m-%d')          # isn't this unnecessary
 apiKey = config.get('AV', 'apiKey')            # Alpha Vantage API key
-
+outputDailyTimeSeries = config.get('Data', 'stock-bot-daily-timeseries') # to set up custom output folders
+outputGraphs = config.get('Data', 'stock-bot-graphs') # to set up custom output folders
 
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
@@ -47,14 +48,15 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
-if os.path.isdir("./output") == False:
-    os.makedirs("./output")
-    if os.path.isdir("./output/graph") == False:
-        os.makedirs("./output/graph")
-    if os.path.isdir("./output/data") == False:
-        os.makedirs("./output/data")
-if os.path.isdir("./input") == False:
-    os.makedirs("./input")
+
+# if os.path.isdir("./output") == False:
+#     os.makedirs("./output")
+#     if os.path.isdir("./output/graph") == False:
+#         os.makedirs("./output/graph")
+#     if os.path.isdir("./output/data") == False:
+#         os.makedirs("./output/data")
+# if os.path.isdir("./input") == False:
+#     os.makedirs("./input")
 
 
 """Loading json file (contains lists,dicts,variables of interest)"""
@@ -72,8 +74,8 @@ else:
 
 """Sets the time variables"""
 dateToday = dt.date.today()
-dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)
-dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)
+dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)  # TODO:[B] add timezone.dt support
+dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)  # TODO:[B] add timezone.dt support
 dateTwoWeeks = dateToday - dt.timedelta(14)
 
 
@@ -90,47 +92,64 @@ def main():
     dataStatus["repeatCounter"] += 1
 
     ##### Loads companies of interest
-    companiesMain = pd.read_csv("./input/company-list.csv", sep = ",", header = None, index_col = 0)  # set to reload when data_processor is called, so that new items can be added without resetting the program
+    companiesMain = pd.read_csv("./input/portfolio-summary.csv", sep = ",")
     newBanned = []
 
     ##### pulls stock data and checks for conditions
     for row in range(companiesMain.shape[0]):      # for each portfolio
-        for column in range(companiesMain.shape[1]):  # for each stock
-            if not pd.isnull(companiesMain.iloc[row,column]):
-                tmpStock = str(companiesMain.iloc[row,column])
-                print(f"analyzing {tmpStock}")
+#        for column in range(companiesMain.shape[1]):  # for each stock
+        if not pd.isnull(companiesMain.iloc[row,0]):
+            tmpStock = str(companiesMain.iloc[row,0])
+            print(f"formatting data for {tmpStock}")
 
-                if tmpStock in dataStatus["oldBanned"]:
-                    dateTmp = dt.datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
-                    if dateTmp < dateTwoWeeks:
-                        dataStatus["oldBanned"].pop(tmpStock, None)
+            if tmpStock in dataStatus["oldBanned"]:
+                dateTmp = dt.datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
+                if dateTmp < dateTwoWeeks:
+                    dataStatus["oldBanned"].pop(tmpStock, None)
 
-                if tmpStock not in dataStatus["oldBanned"].keys():  # retrieves stock data
-                    # NOT banned (yet)
-                    # If conditon(s) failed, will trigger email and be added to banned list
-                    ts = TimeSeries(key=apiKey, output_format='pandas')
-                    data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
+            if tmpStock not in dataStatus["oldBanned"].keys():  # retrieves stock data
+                # NOT banned (yet)
+                # If conditon(s) failed, will trigger email and be added to banned list
+                ts = TimeSeries(key=apiKey, output_format='pandas')
+                data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
 
-                    ##### CONDITION1: dividend checker
-                    if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
-                        newDividend.append(tmpStock)
+                ##### CONDITION1: dividend checker
+                if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
+                    newDividend.append(tmpStock)
 
-                    ##### CONDITION2: Determine if there was a stock decline
-                    condition2 = (data["5. adjusted close"][0])/(data["5. adjusted close"][1])
-                    if (0.9 < (1-condition2) < 1.1):
-                        dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
-                        newBanned.append(tmpStock)
+                ##### CONDITION2: Determine if there was a stock decline
+                condition2 = (data["5. adjusted close"][0])/(data["5. adjusted close"][1])
+                if (0.9 < (1-condition2) < 1.1):
+                    dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
+                    newBanned.append(tmpStock)
 
-                    # if condition2 == False:
-                    #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
+                # if condition2 == False:
+                #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
 
-                    ##### Save data as CSV for processing as desired
-                    data.to_csv(f"./output/data/{tmpStock}-{dateToday}.csv", index = True, )
+                ##### Save data as CSV for processing as desired
+                tmpStr = str(outputDailyTimeSeries + f"{tmpStock}-{dateToday}.csv")
+                data.to_csv(tmpStr, index = True, )
 
-                    ##### plotting
-                    plotMaker(data, meta_data, tmpStock)
+                ##### plotting
+                plotMaker(data, meta_data, tmpStock)
 
-            time.sleep(12.5)                            # makes script compatible with AV calls per minute limit
+            oldDataDateFile = tmpStock+"-"+str(dateYesterdayNYC)+'.csv'
+            oldDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
+            newDataDateFile = tmpStock+"-"+str(dateTodayNYC)+'.csv'
+            newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
+            if os.path.isfile(oldDataDateFilePath):
+                print("True")
+                list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None)
+                list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None)
+                list_2_nodups = list_2.drop_duplicates()
+                total_pd = pd.merge(list_1 , list_2_nodups, on=[0])
+                tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
+                total_pd.to_csv(tmpStr, sep= ",", header = None)
+                tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
+                subprocess.call(tmpStr, shell=True)
+
+
+            time.sleep(12.1)                            # makes script compatible with AV calls per minute limit
 
     # ##### Send email(s) if conditions were met
     # if len(newDividend) > 0:
@@ -162,7 +181,7 @@ def plotMaker(data, meta_data, tmpStock):
     data['4. close'].plot()
     plt.title(f'Daily Times Series for the {tmpStock} stock')
     plt.ylabel('Cost')
-    plt.savefig(f'./output/graphs/{tmpStock}.png')
+    plt.savefig(f'{outputGraphs}{tmpStock}-daily-timeseries.png')
     plt.clf()
     plt.cla()
     plt.close()

@@ -35,15 +35,26 @@ smtpPort=(YOUR BOT EMAIL SMTP PORT HERE)
 #+BEGIN_SRC
 [AV]
 apiKey=(YOUR Alpha Vantage API KEY HERE)
+
+[Data]
+stock-bot-daily-timeseries=/path/to/daily/timeseries/output/
+stock-bot-graphs=/path/to/graph/output/
 #+END_SRC
+
+remember to add the backslash AT THE END of the path as well.
 
 ***  Add stocks of interest
 
-- "./input/company-list.csv".  Has index.
+Requires "./input/portfolio-summary.csv" in the following example format:
+
 #+BEGIN_SRC
-ETF,MSFT,AAPL
+"var"
+"AUY"
+"MSFT"
+"CVX"
 #+END_SRC
 
+"var" being ticker name.
 
 ** To Use
 
@@ -52,7 +63,7 @@ To run, modify crontab or similar program to run 'bot.py' at a frequency of your
 * Versions
 ** version history
 *** 0.0.1
-Writing up the email system
+Writing up the bot email system
 *** 0.0.2
 Retrieving data from Alpha Vantage with a schedular for every x minutes
 *** 0.0.3
@@ -67,6 +78,10 @@ Add in config files to protect confidential email details, Alpha Vantage API key
 improving ability of the script to run by itself
 *** 0.0.8
 Switched fully to a json config file.  use crontab to run every day at 7PM instead (see setup)
+*** 0.0.9
+- Further config/path modifications.  Allows for improved data collection into customized outputs.
+- Will collate today's and yesterday's stock data so that you can slowly amass a csv with a greater degree of daily-timeseries data (daily-timeseries from AV does NOT go all the way to the beginning of time)
+- Will delete previous days CSV files to remove clutter
 ** TO-DO list
 *** [C] Add option to analyze similar companies relative to the stock of Interest.
 *** [A] check at specific time (instead of just every x hours), so as to minimize read/write to SD card and limit data inaccuracy.  NOTE: do this through crontab
