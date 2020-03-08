@@ -77,6 +77,7 @@ else:
 dateToday = dt.date.today()
 dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)  # TODO:[B] add timezone.dt support
 dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)  # TODO:[B] add timezone.dt support
+dateWeekendNYC = dt.date.today() - dt.timedelta(hours=72)  # TODO:[B] add timezone.dt support
 dateTwoWeeks = dateToday - dt.timedelta(14)
 
 
@@ -136,10 +137,11 @@ def main():
 
             oldDataDateFile = tmpStock+"-"+str(dateYesterdayNYC)+'.csv'
             oldDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
+            weekendDataDateFile = tmpStock+"-"+str(dateWeekendNYC)+'.csv'
+            weekendDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
             newDataDateFile = tmpStock+"-"+str(dateTodayNYC)+'.csv'
             newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
             if os.path.isfile(oldDataDateFilePath):
-                print("True")
                 list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None)
                 list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None)
                 total_pd = list_1.append(list_2.iloc[-1,:])
@@ -147,7 +149,14 @@ def main():
                 total_pd.to_csv(tmpStr, sep= ",", header = None)
                 tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
                 subprocess.call(tmpStr, shell=True)
-
+            elif os.path.isfile(weekendDataDateFilePath):
+                list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None)
+                list_2 = pd.read_csv(weekendDataDateFilePath, sep = ",", header = None)
+                total_pd = list_1.append(list_2.iloc[-1,:])
+                tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
+                total_pd.to_csv(tmpStr, sep= ",", header = None)
+                tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
+                subprocess.call(tmpStr, shell=True)
 
             time.sleep(12.1)                            # makes script compatible with AV calls per minute limit
 
