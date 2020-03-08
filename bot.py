@@ -93,7 +93,7 @@ def main():
     dataStatus["repeatCounter"] += 1
 
     ##### Loads companies of interest
-    companiesMain = pd.read_csv(inputSummary, sep = ",")
+    companiesMain = pd.read_csv(inputSummary, sep = ",", engine="python3")
     newBanned = []
 
     ##### pulls stock data and checks for conditions
@@ -142,8 +142,7 @@ def main():
                 print("True")
                 list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None)
                 list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None)
-                list_2_nodups = list_2.drop_duplicates()
-                total_pd = pd.merge(list_1 , list_2_nodups, on=[0])
+		total_pd = list_1.append(list_2.iloc[-1,:])
                 tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
                 total_pd.to_csv(tmpStr, sep= ",", header = None)
                 tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
