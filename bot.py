@@ -135,28 +135,24 @@ def main():
                 ##### plotting
                 plotMaker(data, meta_data, tmpStock)
 
+
+            ##### handles any 'absent' days (weekends, holidays, etc)
             oldDataDateFile = tmpStock+"-"+str(dateYesterdayNYC)+'.csv'
             oldDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
-            weekendDataDateFile = tmpStock+"-"+str(dateWeekendNYC)+'.csv'
-            weekendDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
             newDataDateFile = tmpStock+"-"+str(dateTodayNYC)+'.csv'
             newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
             if os.path.isfile(oldDataDateFilePath):
                 list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None)
+                tmpVal1 = dt.datetime.strptime(list_1.iloc[-1,0], '%Y-%m-%d').date()
                 list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None)
-                total_pd = list_1.append(list_2.iloc[-1,:])
-                tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
-                total_pd.to_csv(tmpStr, sep= ",", header = None)
-                tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
-                subprocess.call(tmpStr, shell=True)
-            elif os.path.isfile(weekendDataDateFilePath):
-                list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None)
-                list_2 = pd.read_csv(weekendDataDateFilePath, sep = ",", header = None)
-                total_pd = list_1.append(list_2.iloc[-1,:])
-                tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
-                total_pd.to_csv(tmpStr, sep= ",", header = None)
-                tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
-                subprocess.call(tmpStr, shell=True)
+                tmpVal2 = dt.datetime.strptime(list_2.iloc[-1,0], '%Y-%m-%d').date()
+
+                if (tmpVal1 > tmpVal2) == True:
+                    total_pd = list_1.append(list_2.iloc[-1,:])
+                    tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
+                    total_pd.to_csv(tmpStr, sep= ",", header = None)
+                    tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
+                    subprocess.call(tmpStr, shell=True)
 
             time.sleep(12.1)                            # makes script compatible with AV calls per minute limit
 
