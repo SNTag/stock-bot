@@ -114,6 +114,7 @@ def main():
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
                 data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
+                data = data.sort_values(by='date')
 
                 ##### CONDITION1: dividend checker
                 if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
@@ -130,7 +131,7 @@ def main():
 
                 ##### Save data as CSV for processing as desired
                 tmpStr = str(outputDailyTimeSeries + f"{tmpStock}-{dateToday}.csv")
-                data.to_csv(tmpStr, index = True, )
+                data.to_csv(tmpStr, index = True)
 
                 ##### plotting
                 plotMaker(data, meta_data, tmpStock)
@@ -142,10 +143,10 @@ def main():
             newDataDateFile = tmpStock+"-"+str(dateTodayNYC)+'.csv'
             newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
             if os.path.isfile(oldDataDateFilePath):
-                list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None)
-                tmpVal1 = dt.datetime.strptime(list_1.iloc[-1,0], '%Y-%m-%d').date()
-                list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None)
-                tmpVal2 = dt.datetime.strptime(list_2.iloc[-1,0], '%Y-%m-%d').date()
+                list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None, index_col = 0)
+                tmpVal1 = dt.datetime.strptime(str(list_1.index[-1]), '%Y-%m-%d %H:%M:%S').date()
+                list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None, index_col = 0)
+                tmpVal2 = dt.datetime.strptime(str(list_2.index[-1]), '%Y-%m-%d %H:%M:%S').date()
 
                 if (tmpVal1 > tmpVal2) == True:
                     total_pd = list_1.append(list_2.iloc[-1,:])
