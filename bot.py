@@ -20,6 +20,7 @@ import configparser             # For soft-coding bot-config
 import subprocess               # For some quick quality checking
 import json                     # For reading/saving to json
 import sys                      # needed
+import requests
 
 
 
@@ -89,6 +90,14 @@ dateTwoWeeks = dateToday - dt.timedelta(14)
 
 def main():
     """Will generate, process, and save csv files.  It will also determine if conditions have been triggered."""
+
+    ##### pauses the program until internet is detected.  slight way of ensuring the script is run once properly per day.  If no internet detected, it will attempt to connect every 15 min.
+    tmpVal = False
+    while (tmpVal == False):
+        tmpVal = check_internet()
+        if (tmpVal == False):
+            time.sleep(900)
+
     ##### Adding a short section for basic quality control checking (simple way of counting # of runs)
     global dataStatus
     dataStatus["repeatCounter"] += 1
@@ -99,17 +108,16 @@ def main():
 
     ##### pulls stock data and checks for conditions
     for row in range(companiesMain.shape[0]):      # for each portfolio
-#        for column in range(companiesMain.shape[1]):  # for each stock
-        if not pd.isnull(companiesMain.iloc[row,0]):
+        if not pd.isnull(companiesMain.iloc[row,0]):  # for each stock
             tmpStock = str(companiesMain.iloc[row,0])
             print(f"formatting data for {tmpStock}")
 
-            if tmpStock in dataStatus["oldBanned"]:
+            if tmpStock in dataStatus["oldBanned"]:  # if still banned
                 dateTmp = dt.datetime.strptime(dataStatus["oldBanned"][tmpStock], '%Y-%m-%d').date()  # converts banned-date to datetime object for comparisons
                 if dateTmp < dateTwoWeeks:
                     dataStatus["oldBanned"].pop(tmpStock, None)
 
-            if tmpStock not in dataStatus["oldBanned"].keys():  # retrieves stock data
+            if tmpStock not in dataStatus["oldBanned"].keys():  # if not banned. retrieves stock data
                 # NOT banned (yet)
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
@@ -144,9 +152,9 @@ def main():
             newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
             if os.path.isfile(oldDataDateFilePath):
                 list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None, index_col = 0)
-                tmpVal1 = dt.datetime.strptime(str(list_1.index[-1]), '%Y-%m-%d %H:%M:%S').date()
+                tmpVal1 = dt.datetime.strptime(str(list_1.index[-1]), '%Y-%m-%d').date()
                 list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None, index_col = 0)
-                tmpVal2 = dt.datetime.strptime(str(list_2.index[-1]), '%Y-%m-%d %H:%M:%S').date()
+                tmpVal2 = dt.datetime.strptime(str(list_2.index[-1]), '%Y-%m-%d').date()
 
                 if (tmpVal1 > tmpVal2) == True:
                     total_pd = list_1.append(list_2.iloc[-1,:])
@@ -191,6 +199,17 @@ def plotMaker(data, meta_data, tmpStock):
     plt.clf()
     plt.cla()
     plt.close()
+
+
+def check_internet():
+    url='https://duckduckgo.com/'
+    timeout=5
+    try:
+        _ = requests.get(url, timeout=timeout)
+        return True
+    except requests.ConnectionError:
+        print("İnternet bağlantısı yok.")
+    return False
 
 
 
