@@ -40,6 +40,9 @@ apiKey = config.get('AV', 'apiKey')            # Alpha Vantage API key
 outputDailyTimeSeries = config.get('Data', 'stock-bot-daily-timeseries') # to set up custom output folders
 outputGraphs = config.get('Data', 'stock-bot-graphs') # to set up custom output folders
 inputSummary = config.get('Data', 'portfolio-summary') # to set up custom output folders
+condDecline = float(config.get('conditions', 'decline')) # to set up custom output folders
+condCritical = float(config.get('conditions', 'critical')) # to set up custom output folders
+
 
 """Background details"""
 matplotlib.use('AGG')           # Used to set matplotlib backend
@@ -78,6 +81,7 @@ else:
 dateToday = dt.date.today()
 dateTodayNYC = dt.date.today() - dt.timedelta(hours=8)  # TODO:[B] add timezone.dt support
 dateYesterdayNYC = dt.date.today() - dt.timedelta(hours=24)  # TODO:[B] add timezone.dt support
+date2DaysAgoNYC = dt.date.today() - dt.timedelta(hours=48)  # TODO:[B] add timezone.dt support
 dateWeekendNYC = dt.date.today() - dt.timedelta(hours=72)  # TODO:[B] add timezone.dt support
 dateTwoWeeks = dateToday - dt.timedelta(14)
 
@@ -123,19 +127,23 @@ def main():
                 ts = TimeSeries(key=apiKey, output_format='pandas')
                 data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
                 data = data.sort_values(by='date')
+                data.columns = ["open","high","low","close",
+                               "adjusted_close","volume","dividend_amount",
+                               "split_coefficient"]
 
                 ##### CONDITION1: dividend checker
-                if (data["7. dividend amount"][0] > 0) and (dateToday > dateTodayNYC):
+                if (data["dividend_amount"][0] > 0) and (dateToday > dateTodayNYC):
                     newDividend.append(tmpStock)
 
                 ##### CONDITION2: Determine if there was a stock decline
-                condition2 = (data["5. adjusted close"][0])/(data["5. adjusted close"][1])
-                if (0.9 < (1-condition2) < 1.1):
+                condition2 = (data["adjusted_close"][0])/(data["adjusted_close"][1])
+                if ((1-condDecline) < (1-condition2) < (1+condDecline)):  #((1-condCritical) < (1-condition2) < (1+condCritical))
                     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
                     newBanned.append(tmpStock)
 
                 # if condition2 == False:
                 #     dataStatus["oldBanned"][tmpStock] = f'{dateTwoWeeks}'
+
 
                 ##### Save data as CSV for processing as desired
                 tmpStr = str(outputDailyTimeSeries + f"{tmpStock}-{dateToday}.csv")
@@ -150,18 +158,22 @@ def main():
             oldDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
             newDataDateFile = tmpStock+"-"+str(dateTodayNYC)+'.csv'
             newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
+            rmDataDateFile = tmpStock+"-"+str(date2DaysAgoNYC)+'.csv'
+            rmDataDateFilePath = str(outputDailyTimeSeries+rmDataDateFile)
             if os.path.isfile(oldDataDateFilePath):
                 list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None, index_col = 0)
                 tmpVal1 = dt.datetime.strptime(str(list_1.index[-1]), '%Y-%m-%d').date()
                 list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None, index_col = 0)
                 tmpVal2 = dt.datetime.strptime(str(list_2.index[-1]), '%Y-%m-%d').date()
 
-                if (tmpVal1 > tmpVal2) == True:
+                if (tmpVal1 > tmpVal2) == True:  # TODO:[B] find a better way to update csv
                     total_pd = list_1.append(list_2.iloc[-1,:])
                     tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
                     total_pd.to_csv(tmpStr, sep= ",", header = None)
-                    tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
-                    subprocess.call(tmpStr, shell=True)
+
+                    if os.path.isfile(rmDataDateFilePath):  # removes csv files older than two days.
+                        tmpStr = "rm " + rmDataDateFilePath  # TODO:[C] should replace with something safer
+                        subprocess.call(tmpStr, shell=True)
 
             time.sleep(12.1)                            # makes script compatible with AV calls per minute limit
 
@@ -192,7 +204,7 @@ def email_sending(msg, username, botName, botPass):
 
 def plotMaker(data, meta_data, tmpStock):
     print(f"Making graphs for {tmpStock}")
-    data['4. close'].plot()
+    data['close'].plot()
     plt.title(f'Daily Times Series for the {tmpStock} stock')
     plt.ylabel('Cost')
     plt.savefig(f'{outputGraphs}{tmpStock}-daily-timeseries.png')
