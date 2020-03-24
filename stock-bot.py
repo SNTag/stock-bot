@@ -126,7 +126,7 @@ def main():
                 # If conditon(s) failed, will trigger email and be added to banned list
                 ts = TimeSeries(key=apiKey, output_format='pandas')
                 data, meta_data = ts.get_daily_adjusted(symbol=tmpStock, outputsize='full')  # using adjusted to determine dividend yields
-                data = data.sort_values(by='date')
+                data = data.sort_values(by='date', ascending = False)
                 data.columns = ["open","high","low","close",
                                "adjusted_close","volume","dividend_amount",
                                "split_coefficient"]
@@ -134,6 +134,7 @@ def main():
                 ##### CONDITION1: dividend checker
                 if (data["dividend_amount"][0] > 0) and (dateToday > dateTodayNYC):
                     newDividend.append(tmpStock)
+
 
                 ##### CONDITION2: Determine if there was a stock decline
                 condition2 = (data["adjusted_close"][0])/(data["adjusted_close"][1])
@@ -149,31 +150,19 @@ def main():
                 tmpStr = str(outputDailyTimeSeries + f"{tmpStock}-{dateToday}.csv")
                 data.to_csv(tmpStr, index = True)
 
+
                 ##### plotting
                 plotMaker(data, meta_data, tmpStock)
 
 
-            ##### handles any 'absent' days (weekends, holidays, etc)
-            oldDataDateFile = tmpStock+"-"+str(dateYesterdayNYC)+'.csv'
-            oldDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
-            newDataDateFile = tmpStock+"-"+str(dateTodayNYC)+'.csv'
-            newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
-            rmDataDateFile = tmpStock+"-"+str(date2DaysAgoNYC)+'.csv'
-            rmDataDateFilePath = str(outputDailyTimeSeries+rmDataDateFile)
-            if os.path.isfile(oldDataDateFilePath):
-                list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None, index_col = 0)
-                tmpVal1 = dt.datetime.strptime(str(list_1.index[-1]), '%Y-%m-%d').date()
-                list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None, index_col = 0)
-                tmpVal2 = dt.datetime.strptime(str(list_2.index[-1]), '%Y-%m-%d').date()
+                ##### tmp solution to the data-logging
+                oldDataDateFile = tmpStock+"-"+str(dateYesterdayNYC)+'.csv'
+                oldDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
 
-                if (tmpVal1 > tmpVal2) == True:  # TODO:[B] find a better way to update csv
-                    total_pd = list_1.append(list_2.iloc[-1,:])
-                    tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
-                    total_pd.to_csv(tmpStr, sep= ",", header = None)
+                if os.path.isfile(oldDataDateFilePath):  # removes csv files older than two days.
+                    tmpStr = "rm " + oldDataDateFilePath  # TODO:[C] should replace with something safer
+                    subprocess.call(tmpStr, shell=True)
 
-                    if os.path.isfile(rmDataDateFilePath):  # removes csv files older than two days.
-                        tmpStr = "rm " + rmDataDateFilePath  # TODO:[C] should replace with something safer
-                        subprocess.call(tmpStr, shell=True)
 
             time.sleep(12.1)                            # makes script compatible with AV calls per minute limit
 
@@ -222,6 +211,32 @@ def check_internet():
     except requests.ConnectionError:
         print("İnternet bağlantısı yok.")
     return False
+
+def stock_log():
+    """sets up a long-term csv storage."""
+    oldDataDateFile = tmpStock+"-"+str(dateYesterdayNYC)+'.csv'
+    oldDataDateFilePath = str(outputDailyTimeSeries+oldDataDateFile)
+    newDataDateFile = tmpStock+"-"+str(dateTodayNYC)+'.csv'
+    newDataDateFilePath = str(outputDailyTimeSeries+newDataDateFile)
+    rmDataDateFile = tmpStock+"-"+str(date2DaysAgoNYC)+'.csv'
+    rmDataDateFilePath = str(outputDailyTimeSeries+rmDataDateFile)
+
+    # if os.path.isfile(oldDataDateFilePath):
+    #     list_1 = pd.read_csv(newDataDateFilePath, sep = ",", header = None, index_col = 0)
+    #     tmpVal1 = dt.datetime.strptime(str(list_1.index[-1]), '%Y-%m-%d').date()
+    #     list_2 = pd.read_csv(oldDataDateFilePath, sep = ",", header = None, index_col = 0)
+    #     tmpVal2 = dt.datetime.strptime(str(list_2.index[-1]), '%Y-%m-%d').date()
+
+    #     if (tmpVal1 > tmpVal2) == True:  # TODO:[B] find a better way to update csv
+    #         total_pd = list_1.append(list_2.iloc[-1,:])
+    #         tmpStr = outputDailyTimeSeries + tmpStock + "-Sum.csv"
+    #         total_pd.to_csv(tmpStr, sep= ",", header = None)
+
+    #         if os.path.isfile(rmDataDateFilePath):  # removes csv files older than two days.
+    #             tmpStr = "rm " + rmDataDateFilePath  # TODO:[C] should replace with something safer
+    #             subprocess.call(tmpStr, shell=True)
+
+
 
 
 

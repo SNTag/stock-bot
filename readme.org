@@ -45,7 +45,7 @@ stock-bot-graphs=/path/to/graph/output/
 
 remember to add the backslash AT THE END of the path as well.
 
-***  Add stocks of interest
+*** Add stocks of interest
 
 Requires "./input/portfolio-summary.csv" in the following example format:
 
