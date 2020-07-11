@@ -8,5 +8,8 @@
 ##
 ## This program will process stock-data, but differently from before.
 
-library(tidyverse)
+if (!file.exists("./config")) reticulate::py_run_file("config-editor.py")
 
+pacman::p_load(tidyverse,
+               reticulate,
+               alphavantager)

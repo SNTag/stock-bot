@@ -17,9 +17,21 @@ output:
 
 # Description
 
-A Stock Bot to keep me updated on my investments.  I am a lazy investor; once I make an investment, I don't check up on it often.  But for the stocks that I am taking a gamble on, or to just get an idea of market health, I would like them to give the occasional message.  The system will pull data from Alpha Vantage, check for issues of interest, and send the information to an email as configured in a "bot-login.cnf".
-
 My stock-bot is being reprogrammed in R. This is a work in progress.
+
+## Purpose
+
+It will run once a day, at the end of the trading session, using free api sources. As such, efficiency is not the goal, and can run for a notable period of time.
+
+This script will pull information from a financial api, and process it. It's main purpose is to alert to abnormalities in the data (ex., stock going under or doing unusually well). It will also pump out extra data as a side effect (graphs, producing ratios, etc).
+
+## Why I made this
+
+This is a simple bot to keep me updated on my investments. I am a lazy investor; I don't want to baby-sit my investments.
+
+This script is designed for a headless server (for a VPS, or a simple raspberry pi). Abnormalities in data will be reported using a notifier.
+
+I rewrote this script from python as I prefer the R language. I have also begun to understand it in greater depth than python, and see advantages in using R for further data analysis.
 
 # To Use
 
@@ -29,41 +41,13 @@ My stock-bot is being reprogrammed in R. This is a work in progress.
 
 ### Setting up data collection
 
-- Register for an [[https://www.alphavantage.co/][Alpha Vantage API key]]
-- Add this key to somewhere in your 'bot-login.cnf' as such:
-
-#+BEGIN_SRC
-[AV]
-apiKey=(YOUR Alpha Vantage API KEY HERE)
-
-[Data]
-stock-bot-daily-timeseries=/path/to/daily/timeseries/output/
-stock-bot-graphs=/path/to/graph/output/
-#+END_SRC
-
-remember to add the backslash AT THE END of the path as well.
-
 ### Add stocks of interest
-
-Requires "./input/portfolio-summary.csv" in the following example format:
-
-#+BEGIN_SRC
-"var"
-"AUY"
-"MSFT"
-"CVX"
-#+END_SRC
-
-"var" being ticker name.
 
 ## To Use
 
-To run, modify crontab or similar program to run 'stock-bot.R' at a frequency of your choice.  I will
-eventually add a setup file that will rapidly set up the software and crontab.
-
 # Technical details
 
-These details are unnecessary for everyday usage.
+These details are unnecessary for everyday usage. They refer to how the script functions.
 
 ## Tracking companies and the investment plan they are under
 
@@ -84,3 +68,18 @@ Done using json. Holds a list of stock names as element names, representing a da
 ## Notifications
 
 User needs to set up an appropiate notification system. An example notifier using an ITFFF app and webhooks is in 'notify.sh'. Make sure to replace '<your-key>' in notify.sh with your own key.
+
+## Data collection
+
+Restricted to only collecting data for now. Will not save previous sheets collected from financial apis.
+
+Uses only Alpha Vantage for now.
+
+Data collection is done only once a day.
+
+## setup config
+
+options to setup config:
+- If it does not exist, I recommend running the python script "./setup-config.py".
+- modified manually by directly editing "./config".
+- If it exists, but a guided edit is desired, run "./setup-config.py".
