@@ -25,9 +25,9 @@ def make_config():
 
     # generates a config file
     f = open( 'config', 'w' )
-    f.write( 'api = ' + repr(api) + '\n' )
-    f.write( 'api_key = ' + repr(api_key) + '\n' )
-    f.write( 'notifier_key = ' + repr(notifier_key) + '\n' )
+    f.write( 'api: ' + repr(api) + '\n' )
+    f.write( 'api_key: ' + repr(api_key) + '\n' )
+    f.write( 'notifier_key: ' + repr(notifier_key) + '\n' )
     f.close()
 
 
