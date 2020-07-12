@@ -35,6 +35,8 @@ I rewrote this script from python as I prefer the R language. I have also begun 
 
 # To Use
 
+Keep note that the file "./stock.csv" is an example file. Please replace with your own.
+
 ## Prerequisites
 
 ### setting up the fundamentals and notifications
@@ -61,10 +63,6 @@ The csv sheet should look as such:
 | TickerB  | planB  |
 | TickerC  | planC  |
 
-## keeping record of banned companies
-
-Done using json. Holds a list of stock names as element names, representing a date. The date informs when the stock is to be taken OFF the banned list.
-
 ## Notifications
 
 User needs to set up an appropiate notification system. An example notifier using an ITFFF app and webhooks is in 'notify.sh'. Make sure to replace '<your-key>' in notify.sh with your own key.
@@ -83,3 +81,21 @@ options to setup config:
 - If it does not exist, I recommend running the python script "./setup-config.py".
 - modified manually by directly editing "./config".
 - If it exists, but a guided edit is desired, run "./setup-config.py".
+
+## input stocks
+
+stocks to consider are to be placed in "./stocks.csv". see 'tracking companies and the investment plan they are under' for how to setup the csv.
+
+The script will read the "./stocks.csv" at the start. As the script is designed to be run fresh every time, it will reread the csv file. As such, modifications to stocks to be considered can be done on the fly.
+
+## alerts
+
+Alerts are hardwired for now.
+
+### keeping record of banned companies
+
+Managed using an R rds object. Holds a list of stock names as element names, representing a date. The date informs when the stock is to be taken OFF the banned list.
+
+### banned stocks
+
+Banned stocks are those that have triggered an alert. For example, excessive decline in price. notifications will be sent once per alert, and then ignored for a week. The program keeps track of banned stocks in the file "./banned-list.rds"
