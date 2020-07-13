@@ -1,5 +1,4 @@
 output
 __pycache__
-input/status.json
-input/company-list.csv
-banned-list.rds
+./data/banned-list.rds
+./input/config.yaml
