@@ -77,6 +77,8 @@ Uses only Alpha Vantage for now.
 
 Data collection is done only once a day.
 
+Data is save to "./data/data.RData". It can be accessed using 'load("./data/data.RData")'.
+
 ## setup config
 
 options to setup config:

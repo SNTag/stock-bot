@@ -10,21 +10,21 @@
 
 ### systems check
 ## config
-if (!file.exists("./config.yaml")) {
+if (!file.exists("./input/config.yaml")) {
     reticulate::py_run_file("config-editor.py")
 } else {
-    config <- yaml::read_yaml("./config.yaml")
+    config <- yaml::read_yaml("./input/config.yaml")
 }
 ## stocks
-if (!file.exists("./stock.csv")) {
+if (!file.exists("./input/stock.csv")) {
     cat("need the stock csv \nread the docs \n")
 } else {
-    stock.csv <- readr::read_csv("./stock.csv")
+    stock.csv <- readr::read_csv("./input/stock.csv")
     tickers <- dplyr::pull(stock.csv, 1)
 }
 ## banned list
-if (file.exists("./banned-list.rds")) {
-    banned.list <- readRDS("banned-list.rds")
+if (file.exists("./data/banned-list.rds")) {
+    banned.list <- readRDS("./data/banned-list.rds")
 } else {
     banned.list <- c()
 }
@@ -36,8 +36,8 @@ source("./functions.R")
 ## } else {
 ##     print("working without any alerts or notifications")
 ## }
-if (file.exists("./alerts.R")) {
-    source("./alerts.R")
+if (file.exists("./input/alerts.R")) {
+    source("./input/alerts.R")
 } else {
     print("working without any alerts or notifications")
 }
@@ -47,7 +47,8 @@ if (file.exists("./alerts.R")) {
 pacman::p_load(tidyverse,                   # data processing
                reticulate,                  # running python scripts
                alphavantager,               # data collection
-               tidyquant                    # data collection
+               tidyquant,                   # data collection
+               quantmod
                )
 
 
@@ -73,9 +74,7 @@ if (length(tickers) > 5) {
         print(i)
     }
 }
-#write.csv(daily.stck, file = "./data.csv")
-#saveRDS("data", "data.rds")
-#save.image(file = "data.RData", env = "data")
+save(data, file = "./data/data.RData")
 
 ### assessing conditions
 ## for (i in alerts) {

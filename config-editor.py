@@ -34,7 +34,7 @@ def make_config():
 
 
 
-if os.path.isfile("./config.yaml"):
+if os.path.isfile("./input/config.yaml"):
     edit_config()
 else:
     make_config()
