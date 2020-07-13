@@ -16,7 +16,6 @@ if (!file.exists("./config.yaml")) {
     config <- yaml::read_yaml("./config.yaml")
 }
 ## stocks
-print("incomplete")                                         # INCOMPLETE
 if (!file.exists("./stock.csv")) {
     cat("need the stock csv \nread the docs \n")
 } else {
@@ -105,14 +104,14 @@ for (i in tickers) {
 }
 
 ### sending out alerts
-for (i in 1:length(stck.msgs)) {
-    print(stck.msgs[i])
-    tmpVar1 <- stck.msgs[i]
-    print(names(stck.msgs)[i])
-    tmpVar2 <- names(stck.msgs)[i]
-    tmpVar3 <- paste("stck: ", tmpVar1, ". issue: ", tmpVar2, sep = "")
-    notify_me()
-}
+## for (i in 1:length(stck.msgs)) {
+##     print(stck.msgs[i])
+##     tmpVar1 <- stck.msgs[i]
+##     print(names(stck.msgs)[i])
+##     tmpVar2 <- names(stck.msgs)[i]
+##     tmpVar3 <- paste("stck: ", tmpVar1, ". issue: ", tmpVar2, sep = "")
+##     notify_me()
+## }
 
 ### saving banned list
 save_banned()
