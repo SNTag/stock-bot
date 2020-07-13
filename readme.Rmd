@@ -37,6 +37,8 @@ I rewrote this script from python as I prefer the R language. I have also begun 
 
 Keep note that the file "./stock.csv" is an example file. Please replace with your own.
 
+The main script is "./stock-bot.R"
+
 ## Prerequisites
 
 ### setting up the fundamentals and notifications
@@ -90,7 +92,11 @@ The script will read the "./stocks.csv" at the start. As the script is designed 
 
 ## alerts
 
-Alerts are hardwired for now.
+### changing conditions for alerts
+
+Alerts are hard-coded for now. Searches for abnormal changes in daily returns (greater then delat 0.04 changes).
+
+Eventually, the main way will be if you know R; edit the file "./alerts.R". I will see about adding a yaml option later.
 
 ### keeping record of banned companies
 

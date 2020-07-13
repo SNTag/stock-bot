@@ -59,23 +59,21 @@ save_banned <- function() {
 
 
 ### Data collection
+# deprecated! I'm just remaking quantmode packages.
+## #' collects the data from alphavantage, using R
+## #' quantmode::getSymbols. Will place data in enviroment 'data' by
+## #' default.
+## #'
+## #' @param tckr takes a vector of tickers to pull from alpha vantage.
+## #' @return data
+## data_collection <- function(tckr, usr.envir = ".GlobalEnv") {
+##     alphavantager::av_api_key(config$api_key)
 
-#' collects the data from alphavantage
-#'
-#' @param tckr takes a vector of tickers to pull from alpha vantage.
-#' @return data
-data_collection <- function(tckr) {
-    alphavantager::av_api_key(config$api_key)
-
-    data.today <-
-        tickers %>%
-        tidyquant::tq_get(
-                       get = "alphavantage",
-                       av_fun = "TIME_SERIES_INTRADAY",
-                       interval = "5min"
-                   )
-    return(data.today)
-}
+##     for (i in tickers) {
+##         quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = usr.envir)
+##         print(i)
+##     }
+## }
 
 
 ### notifications
@@ -90,3 +88,25 @@ notify_me <- function(msg) {
 ### Alerts
 
 #' Will read the file "./alerts.yaml". Alert conditions are decided for each stock. notifications will be sent out if appropiate
+setting_alerts <- function() {
+    x <- (ls(alerts) %>% length)
+    p <- c()
+    for (i in 1:x) {
+        p <- c(p, paste("condition", i, sep = ""))
+    }
+
+    return(p)
+}
+
+
+#' Will read the file "./alerts.yaml". Alert conditions are decided for each stock. notifications will be sent out if appropiate
+checking_alerts <- function(x, stck, conditions = conditions) {
+    tmpVar <- c()
+    for (i in 1:length(conditions)) {
+        tmpVar <- c(tmpVar, as.character(get(conditions[i], env = alerts)(x)))
+                                        #eval(parse(text = i))
+        print(stck)
+        print(tmpVar)
+        names(tmpVar)[i] <- stck %>% as.character
+    }
+}
