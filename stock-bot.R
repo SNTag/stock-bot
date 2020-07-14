@@ -12,6 +12,7 @@
 ## config
 if (!file.exists("./input/config.yaml")) {
     reticulate::py_run_file("config-editor.py")
+    config <- yaml::read_yaml("./input/config.yaml")
 } else {
     config <- yaml::read_yaml("./input/config.yaml")
 }
