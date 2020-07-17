@@ -42,6 +42,7 @@ if (file.exists("./input/alerts.R")) {
 } else {
     print("working without any alerts or notifications")
 }
+options("getSymbols.warning4.0"=FALSE) # quelches a notification on 'quantmod::getSymbols'
 
 
 ### loading packages
@@ -63,7 +64,7 @@ tickers <- sorting_stocks()
 ### data collection
 alphavantager::av_api_key(config$api_key)
 data <- new.env()
-if (length(tickers) > 5) {
+if (length(tickers) >= 5) {
     for (i in tickers) {
     quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = data)
     print(i)
@@ -89,17 +90,20 @@ save(data, file = "./data/data.RData")
 
 conditions <- setting_alerts()
 stck.msgs <- c()
+print(Sys.Date())
 for (i in tickers) {
     tmpDat <- get(i, env = data) %>% quantmod::dailyReturn()
+    print(i)
     if (tmpDat[1,1] < -0.04) {
-        notify_me(msg = paste(i, "_is_decreasing", sep = ""))
-        print(paste0("weird", i))
+        msg <- paste(i, "_is_decreasing", sep = "")
+        notify_me(msg = msg)
     }
                                         #        stck.msgs <- c(stck.msgs, checking_alerts(tmpDat, stck = i, conditions = conditions))
 
     if (tmpDat[1,1] > 0.04) {
-        notify_me(msg = paste(i, "_is_increasing", sep = ""))
-        print(paste0("weird", i))
+        msg  <- paste(i, "_is_increasing", sep = "")
+        print(msg)
+        notify_me(msg = msg)
     }
 }
 

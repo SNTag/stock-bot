@@ -1,4 +1,5 @@
 output
 __pycache__
-./data/banned-list.rds
-./input/config.yaml
+data/
+input/
+data/

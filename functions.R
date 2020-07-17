@@ -54,7 +54,7 @@ adding_banned <- function(tckr) {
 
 #' save banned list for future runs
 save_banned <- function() {
-    saveRDS(banned.list, "banned-list.rds")
+    saveRDS(banned.list, "./input/banned-list.rds")
 }
 
 
