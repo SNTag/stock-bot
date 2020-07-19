@@ -64,7 +64,7 @@ tickers <- sorting_stocks()
 ### data collection
 alphavantager::av_api_key(config$api_key)
 data <- new.env()
-if (length(tickers) >= 5) {
+if (length(tickers) < 5) {
     for (i in tickers) {
     quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = data)
     print(i)
