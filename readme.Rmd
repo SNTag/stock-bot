@@ -37,7 +37,9 @@ I rewrote this script from python as I prefer the R language. I have also begun 
 
 Keep note that the file "./stock.csv" is an example file. Please replace with your own.
 
-The main script is "./stock-bot.R"
+The main script is "./stock-bot.R". If you have not provided key details, it will ask you for them.
+
+To add the stock-bot to crontab, to run everyday at 11:00AM, run 'setup.sh'.
 
 ## Prerequisites
 
