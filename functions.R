@@ -81,7 +81,7 @@ save_banned <- function() {
 #' will run the notifications.sh script
 #' @param msg what message to say in the notification.
 notify_me <- function(msg) {
-    system(paste("./notify.sh", msg, config$notifier_key, sep = " "))
+    system(paste("./notify.sh", msg, config$notifier_key, config$approach, sep = " "))
 }
 
 

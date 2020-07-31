@@ -21,7 +21,11 @@ def make_config():
     api_key = str(input("enter the alpha vantage key here: "))
     # notifier_system = str(input("enter the notifier system type here: "))
     # print("which notifier system will you use? \n note: the system you choose can be modified by editing the script 'notif.sh' \n -ifttt \n -email")
-    notifier_key = str(input("enter the ifttt key here: "))
+    echo "which notification system should I use?"
+    echo "- IFTTT"
+    echo "- slack"
+    approach = str(input("choose one of the above (HAS TO BE EXACT): "))
+    notifier_key = str(input("enter the notifier key here: "))
     banned_length = str(input("how long do i keep tickers banned (in days): "))
 
     # generates a config file
@@ -30,6 +34,7 @@ def make_config():
     f.write( 'api_key: ' + repr(api_key) + '\n' )
     f.write( 'notifier_key: ' + repr(notifier_key) + '\n' )
     f.write( 'banned_length: ' + repr(banned_length) + '\n' )
+    f.write( 'approach: ' + repr(approach) + '\n' )
     f.close()
 
 

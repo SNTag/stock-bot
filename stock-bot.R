@@ -50,7 +50,8 @@ pacman::p_load(tidyverse,                   # data processing
                reticulate,                  # running python scripts
                alphavantager,               # data collection
                tidyquant,                   # data collection
-               quantmod
+               quantmod,
+               yaml
                )
 
 

@@ -4,11 +4,13 @@ alerts <- new.env()
 
 alerts$condition1 <-
     function(x) {
-        if (x[1,1] > 0) return("Success")
+        x <- periodReturns(x)
+        if (x[1,1] > 0.05) {return("increasing greatly")}
     }
 
 alerts$condition2 <-
     function(x) {
-        if (x[1,1] > 0) {print("NOOOOO")} else {print("YESSSS")}
+        x <- periodReturns(x)
+        if (x[1,1] < -0.05) {return("decreasing greatly")}
         return("failed")
     }
