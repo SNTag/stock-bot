@@ -95,17 +95,21 @@ print(Sys.Date())
 for (i in tickers) {
     tmpDat <- get(i, env = data) %>% quantmod::dailyReturn()
     print(i)
-    if (tmpDat[1,1] < -0.04) {
-        msg <- paste(i, "_is_decreasing", sep = "")
-        notify_me(msg = msg)
-    }
-                                        #        stck.msgs <- c(stck.msgs, checking_alerts(tmpDat, stck = i, conditions = conditions))
 
-    if (tmpDat[1,1] > 0.04) {
-        msg  <- paste(i, "_is_increasing", sep = "")
-        print(msg)
-        notify_me(msg = msg)
+    for (x in conditions) {
+        tmpFunct  <- get(x, envir = alerts)
+        tmpVar <- tmpFunct(x = tmpDat, stck = i)
+        stck.msgs <- c(stck.msgs, tmpVar)
     }
+}
+
+stck.msgs <- stck.msgs[stck.msgs != "failed"]
+
+uniqueMsgs <- stck.msgs %>% unique
+for (i in 1:length(uniqueMsgs)) {
+    tmpList <- stck.msgs[stck.msgs == uniqueMsgs[[i]]]
+    msg <- paste("these stocks are ", tmpList[[i]], " : ", paste(names(tmpList), collapse = ", "))
+    notify_me(msg = msg)
 }
 
 ### sending out alerts

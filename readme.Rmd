@@ -69,7 +69,19 @@ The csv sheet should look as such:
 
 ## Notifications
 
-User needs to set up an appropiate notification system. An example notifier using an ITFFF app and webhooks is in 'notify.sh'. Make sure to replace '<your-key>' in notify.sh with your own key.
+User needs to set up an appropiate notification system. Current approaches work:
+
+- slack (notifier_key is made as described here: https://api.slack.com/messaging/webhooks)
+
+in development:
+
+- ifttt
+
+### slack
+
+For each alert set, all stocks triggering the alarm will be sent as such:
+
+"these stocks are  decreasing_greatly  :  stock1, stock2, stock3, stock4, stock5"
 
 ## Data collection
 
@@ -98,9 +110,24 @@ The script will read the "./stocks.csv" at the start. As the script is designed 
 
 ### changing conditions for alerts
 
-Alerts are hard-coded for now. Searches for abnormal changes in daily returns (greater then delat 0.04 changes).
+You need to know R to change the alerts. Edit the file "./alerts.R".
 
-Eventually, the main way will be if you know R; edit the file "./alerts.R". I will see about adding a yaml option later.
+**IMPORTANT**
+Each alert needs to return a named list as such: "stck" = "condition msg". For example, one alert that comes with this stock bot is for decreasing greatly.
+
+```{R, echo = T, eval = F}
+alerts$condition2 <-
+    function(x, stck) {
+        x <- quantmod::periodReturn(x)
+        tmpList <- setNames("decreasing_greatly", stck[1])
+        if (x[1,1] < -0.05) {return(tmpList)}
+        return("failed")
+    }
+```
+
+For MSFT, the above would return a list such as c("MSFT": "decreasing_greatly")
+
+A yaml option for setting alerts may come eventually.
 
 ### keeping record of banned companies
 

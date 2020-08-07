@@ -81,13 +81,20 @@ save_banned <- function() {
 #' will run the notifications.sh script
 #' @param msg what message to say in the notification.
 notify_me <- function(msg) {
-    system(paste("./notify.sh", msg, config$notifier_key, config$approach, sep = " "))
+    if (config$approach == "slack") {
+        system(paste("curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"", msg, "\"}' https://hooks.slack.com/services/", config$notifier_key, sep = "" ))
+    }##  elif (config$approach == "ifttt") {
+    ##     system(paste("./notify.sh", msg, config$notifier_key, config$approach, sep = " "))
+    ## }
 }
 
 
 ### Alerts
 
-#' Will read the file "./alerts.yaml". Alert conditions are decided for each stock. notifications will be sent out if appropiate
+#' Will read the file "./alerts.yaml". Alert conditions are decided
+#' for each stock. notifications will be sent out if appropiate.
+#'
+#' If there is an issue, will return a list of all stocks and their issue.
 setting_alerts <- function() {
     x <- (ls(alerts) %>% length)
     p <- c()
