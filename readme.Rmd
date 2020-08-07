@@ -69,6 +69,11 @@ The csv sheet should look as such:
 
 ## Notifications
 
+**NOTE**
+To disable any notifications and to use this as only a data-download service, add this line in '/input/config.yaml' after running '/config-editor.py';
+
+`msg_status: 'false'`
+
 User needs to set up an appropiate notification system. Current approaches work:
 
 - slack (notifier_key is made as described here: https://api.slack.com/messaging/webhooks)

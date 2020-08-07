@@ -61,6 +61,7 @@ banned.list <- reviewing_banned()
 ## sort stocks of interest from the banned
 tickers <- sorting_stocks()
 
+print("getting data <<<<<======-----")
 
 ### data collection
 alphavantager::av_api_key(config$api_key)
@@ -91,10 +92,8 @@ save(data, file = "./data/data.RData")
 
 conditions <- setting_alerts()
 stck.msgs <- c()
-print(Sys.Date())
 for (i in tickers) {
     tmpDat <- get(i, env = data) %>% quantmod::dailyReturn()
-    print(i)
 
     for (x in conditions) {
         tmpFunct  <- get(x, envir = alerts)
@@ -105,13 +104,18 @@ for (i in tickers) {
 
 stck.msgs <- stck.msgs[stck.msgs != "failed"]
 
-uniqueMsgs <- stck.msgs %>% unique
-for (i in 1:length(uniqueMsgs)) {
-    tmpList <- stck.msgs[stck.msgs == uniqueMsgs[[i]]]
-    msg <- paste("these stocks are ", tmpList[[i]], " : ", paste(names(tmpList), collapse = ", "))
-    notify_me(msg = msg)
-}
+print("notifications <<<<======-----")
 
+uniqueMsgs <- stck.msgs %>% unique
+if (config$msg_status == "false") {
+    print("no messages")
+} else {
+    for (i in 1:length(uniqueMsgs)) {
+        tmpList <- stck.msgs[stck.msgs == uniqueMsgs[[i]]]
+        msg <- paste("these stocks are ", tmpList[[i]], " : ", paste(names(tmpList), collapse = ", "))
+        notify_me(msg = msg)
+    }
+}
 ### sending out alerts
 ## for (i in 1:length(stck.msgs)) {
 ##     print(stck.msgs[i])

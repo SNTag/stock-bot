@@ -19,6 +19,7 @@ def make_config():
     # prompts for your configs
     api = "alphavantage"
     api_key = str(input("enter the alpha vantage key here: "))
+    msg_status = str(input("Should this bot send you messages? write one of the following in lowercase : true or false"))
     # notifier_system = str(input("enter the notifier system type here: "))
     # print("which notifier system will you use? \n note: the system you choose can be modified by editing the script 'notif.sh' \n -ifttt \n -email")
     echo "which notification system should I use?"
@@ -46,6 +47,7 @@ def make_config():
     f.write( 'banned_length: ' + repr(banned_length) + '\n' )
     f.write( 'approach: ' + repr(approach) + '\n' )
     f.write( 'notifier_key: ' + repr(notifier_key) + '\n' )
+    f.write( 'msg_status: ' + repr(msg_status) + '\n' )
     f.close()
 
 
