@@ -54,7 +54,6 @@ pacman::p_load(tidyverse,                   # data processing
                yaml
                )
 
-
 ### running the program
 ## manage the banned
 banned.list <- reviewing_banned()

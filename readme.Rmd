@@ -35,19 +35,29 @@ I rewrote this script from python as I prefer the R language. I have also begun 
 
 # To Use
 
-Keep note that the file "./stock.csv" is an example file. Please replace with your own.
+Keep note that the file "/stock.csv" is an example file. Please replace with your own. Details on the csv file can be found under "Technical Details > Tracking companies and the investment plan they are under"
 
-The main script is "./stock-bot.R". If you have not provided key details, it will ask you for them.
+The main script is "/stock-bot.R". If you have not provided key details, it will ask you for them.
 
-To add the stock-bot to crontab, to run everyday at 11:00AM, run 'setup.sh'.
+To add the stock-bot to crontab, to run everyday at 11:00AM, run '/setup.R'.
 
 ## Prerequisites
 
-### setting up the fundamentals and notifications
+### To automatically run daily
+
+Run the Rscript "/setup.R".
+
+### setting up notifications
+
+See below, under 'Technical details > Notifications'
 
 ### Setting up data collection
 
-### Add stocks of interest
+See below, under 'Technical details > Data collection'
+
+### Add your stocks
+
+See below, under 'Technical details > Tracking companies and the investment plan they are under'
 
 ## To Use
 
@@ -57,15 +67,17 @@ These details are unnecessary for everyday usage. They refer to how the script f
 
 ## Tracking companies and the investment plan they are under
 
-Using a basic csv sheet, each company and the plan they are under are read. Informing the program what investment plan they are under is important only to the notifications you receive.
+Using a basic csv sheet (/input/stock.csv), each company and the plan they are under are read. Informing the program what investment plan they are under is important only to the notifications you receive.
 
-The csv sheet should look as such:
+The first two columns of the csv HAVE to be as follows (names can be different):
 
 | stocks  | investment.plan  |
 |---|---|
 | TickerA  | planA  |
 | TickerB  | planB  |
 | TickerC  | planC  |
+
+The column for investment.plan relates to the portfolio the are in. This is for a future feature with better notifications. It is currently unused.
 
 ## Notifications
 
@@ -96,26 +108,26 @@ Uses only Alpha Vantage for now.
 
 Data collection is done only once a day.
 
-Data is save to "./data/data.RData". It can be accessed using 'load("./data/data.RData")'.
+Data is save to "/data/data.RData". It can be accessed using 'load("/data/data.RData")'.
 
 ## setup config
 
 options to setup config:
-- If it does not exist, I recommend running the python script "./setup-config.py".
-- modified manually by directly editing "./config".
-- If it exists, but a guided edit is desired, run "./setup-config.py".
+- If it does not exist, I recommend running the python script "/setup-config.py".
+- modified manually by directly editing "/config".
+- If it exists, but a guided edit is desired, run "/setup-config.py".
 
 ## input stocks
 
-stocks to consider are to be placed in "./stocks.csv". see 'tracking companies and the investment plan they are under' for how to setup the csv.
+stocks to consider are to be placed in "/stocks.csv". see 'tracking companies and the investment plan they are under' for how to setup the csv.
 
-The script will read the "./stocks.csv" at the start. As the script is designed to be run fresh every time, it will reread the csv file. As such, modifications to stocks to be considered can be done on the fly.
+The script will read the "/stocks.csv" at the start. As the script is designed to be run fresh every time, it will reread the csv file. As such, modifications to stocks to be considered can be done on the fly.
 
 ## alerts
 
 ### changing conditions for alerts
 
-You need to know R to change the alerts. Edit the file "./alerts.R".
+You need to know R to change the alerts. Edit the file "/alerts.R".
 
 **IMPORTANT**
 Each alert needs to return a named list as such: "stck" = "condition msg". For example, one alert that comes with this stock bot is for decreasing greatly.
@@ -140,4 +152,4 @@ Managed using an R rds object. Holds a list of stock names as element names, rep
 
 ### banned stocks
 
-Banned stocks are those that have triggered an alert. For example, excessive decline in price. notifications will be sent once per alert, and then ignored for a week. The program keeps track of banned stocks in the file "./banned-list.rds"
+Banned stocks are those that have triggered an alert. For example, excessive decline in price. notifications will be sent once per alert, and then ignored for a week. The program keeps track of banned stocks in the file "/banned-list.rds"
