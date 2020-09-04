@@ -20,9 +20,13 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 
+#----------|where is Rscript?|----------#
+tmpVar="$(which Rscript)"
+
+
 #----------|adding to crontab|----------#
 ## https://www.golinuxcloud.com/get-script-name-get-script-path-shell-script/
-script_path_with_name="/opt/R/lib/R/bin/Rscript '${DIR}/stock-bot.R'  >> '/home/sntag/Documents/stock-bot/stock-bot.log' 2>&1"
+script_path_with_name="${tmpVar} '${DIR}/stock-bot.R'  >> '/home/sntag/Documents/stock-bot/stock-bot.log' 2>&1"
 echo $script_path_with_name
 
 ## https://stackoverflow.com/questions/14450866/search-for-a-cronjob-with-crontab-l/14451184#14451184
