@@ -20,6 +20,10 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 
+#----------|edit stock-bot to become self-referencing|----------#
+sed 's,\#\#\# THIS LINE WILL BE REPLACED,setwd\('"$DIR"'\),' "$DIR/stock-bot.R"
+
+
 #----------|where is Rscript?|----------#
 tmpVar="$(which Rscript)"
 

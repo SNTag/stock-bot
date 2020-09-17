@@ -8,6 +8,9 @@
 ##
 ## This program will process stock-data, but differently from before.
 
+
+### THIS LINE WILL BE REPLACED
+
 ### systems check
 ## config
 if (!file.exists("./input/config.yaml")) {
