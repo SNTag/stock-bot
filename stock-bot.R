@@ -54,7 +54,8 @@ pacman::p_load(tidyverse,                   # data processing
                alphavantager,               # data collection
                tidyquant,                   # data collection
                quantmod,
-               yaml
+               yaml,
+               magrittr
                )
 
 ### running the program
