@@ -33,6 +33,19 @@ tmpVar="$(which Rscript)"
 script_path_with_name="${tmpVar} '${DIR}/stock-bot.R'  >> '/home/sntag/Documents/stock-bot/stock-bot.log' 2>&1"
 echo $script_path_with_name
 
-## https://stackoverflow.com/questions/14450866/search-for-a-cronjob-with-crontab-l/14451184#14451184
-## https://stackoverflow.com/questions/4880290/how-do-i-create-a-crontab-through-a-script#9625233
-crontab -l | grep -q "${script_path_with_name}"  && echo 'entry exists' || (crontab -l 2>/dev/null; echo "0 11 * * * ${script_path_with_name}") | crontab -
+PS3='Do you want to run the script daily: '
+options=("yes", "no")
+select choice in "${options[@]}"; do
+    case $choice in
+        "yes")
+            echo "Adding stock-bot.R to crontab."
+	    ## https://stackoverflow.com/questions/14450866/search-for-a-cronjob-with-crontab-l/14451184#14451184
+            ## https://stackoverflow.com/questions/4880290/how-do-i-create-a-crontab-through-a-script#9625233
+            crontab -l | grep -q "${script_path_with_name}"  && echo 'entry exists' || (crontab -l 2>/dev/null; echo "0 11 * * * ${script_path_with_name}") | crontab -
+            ;;
+        "no")
+            echo "All done."
+            ;;
+        *) echo "invalid option $REPLY";;
+    esac
+done

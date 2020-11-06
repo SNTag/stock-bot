@@ -40,6 +40,9 @@ def make_config():
     fi
     banned_length = str(input("how long do i keep tickers banned (in days): "))
 
+    monthly_boolean = str(input("OPTIONAL - Do you want to collect and store monthly data separately? write one of the following in lowercase : true or false : "))
+    historical_boolean = str(input("OPTIONAL - Do you want to collect and store historical data separately? write one of the following in lowercase : true or false : "))
+
     # generates a config file
     f = open( './input/config.yaml', 'w')
     f.write( 'api: ' + repr(api) + '\n' )
@@ -48,6 +51,8 @@ def make_config():
     f.write( 'approach: ' + repr(approach) + '\n' )
     f.write( 'notifier_key: ' + repr(notifier_key) + '\n' )
     f.write( 'msg_status: ' + repr(msg_status) + '\n' )
+    f.write( 'monthly_boolean: ' + repr(monthly_boolean) + '\n' )
+    f.write( 'historical_boolean: ' + repr(historical_boolean) + '\n' )
     f.close()
 
 

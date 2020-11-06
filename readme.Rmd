@@ -19,27 +19,40 @@ output:
 
 My stock-bot is being reprogrammed in R. This is a work in progress.
 
+This bot is only meant to alert the user to basic stock changes or to get stock data for you. Only
+works with Alpha Vantage (AV) for now, I'll try adding other sources eventually.
+
 ## Purpose
 
-It will run once a day, at the end of the trading session, using free api sources. As such, efficiency is not the goal, and can run for a notable period of time.
+**WARNING** This is only a hobby project.
 
-This script will pull information from a financial api, and process it. It's main purpose is to alert to abnormalities in the data (ex., stock going under or doing unusually well). It will also pump out extra data as a side effect (graphs, producing ratios, etc).
+I run it everyday at 6:00PM using free api sources. Efficiency is not the goal, and does run for a
+long time when accessing AV.
+
+This script will pull information from a financial api and process it. It's main purpose is to
+alert to abnormalities in the data (ex., stock going under or doing unusually well) and to make data
+locally available.
 
 ## Why I made this
 
-This is a simple bot to keep me updated on my investments. I am a lazy investor; I don't want to baby-sit my investments.
+This is a simple bot to keep me updated on my investments. I am a lazy investor; I don't want to
+baby-sit my investments.
 
-This script is designed for a headless server (for a VPS, or a simple raspberry pi). Abnormalities in data will be reported using a notifier.
+This script is designed for a headless server (for a VPS, or a simple raspberry pi). Abnormalities
+in data will be reported using a notifier (eg, slack or iff).
 
-I rewrote this script from python as I prefer the R language. I have also begun to understand it in greater depth than python, and see advantages in using R for further data analysis.
+I rewrote this script from python as I prefer the R language. It's been easier to get into data
+analysis.
 
 # To Use
 
-Keep note that the file "/stock.csv" is an example file. Please replace with your own. Details on the csv file can be found under "Technical Details > Tracking companies and the investment plan they are under"
+Keep note that the file "/stock.csv" is an example file. Please replace with your own. Details on
+the csv file can be found under "Technical Details > Tracking companies and the investment plan they
+are under"
 
 The main script is "/stock-bot.R". If you have not provided key details, it will ask you for them.
 
-To add the stock-bot to crontab, to run everyday at 11:00AM, run '/setup.R'.
+To add the stock-bot to crontab, to run everyday at 6:00PM, run '/setup.sh'.
 
 ## Prerequisites
 
@@ -67,7 +80,9 @@ These details are unnecessary for everyday usage. They refer to how the script f
 
 ## Tracking companies and the investment plan they are under
 
-Using a basic csv sheet (/input/stock.csv), each company and the plan they are under are read. Informing the program what investment plan they are under is important only to the notifications you receive.
+Using a basic csv sheet (/input/stock.csv), each company and the plan they are under are
+read. Informing the program what investment plan they are under is important only to the
+notifications you receive.
 
 The first two columns of the csv HAVE to be as follows (names can be different):
 
@@ -77,22 +92,19 @@ The first two columns of the csv HAVE to be as follows (names can be different):
 | TickerB  | planB  |
 | TickerC  | planC  |
 
-The column for investment.plan relates to the portfolio the are in. This is for a future feature with better notifications. It is currently unused.
+The column for investment.plan relates to the portfolio the are in. This is for a future feature
+with better notifications. It is currently unused.
 
 ## Notifications
 
-**NOTE**
-To disable any notifications and to use this as only a data-download service, add this line in '/input/config.yaml' after running '/config-editor.py';
+**NOTE** To disable any notifications and to use this as only a data-download service, add this line
+in '/input/config.yaml' after running '/config-editor.py';
 
 `msg_status: 'false'`
 
 User needs to set up an appropiate notification system. Current approaches work:
 
 - slack (notifier_key is made as described here: https://api.slack.com/messaging/webhooks)
-
-in development:
-
-- ifttt
 
 ### slack
 
@@ -102,11 +114,12 @@ For each alert set, all stocks triggering the alarm will be sent as such:
 
 ## Data collection
 
-Restricted to only collecting data for now. Will not save previous sheets collected from financial apis.
+Restricted to only collecting data for now. Will not build/save to data collected previously. That
+is a feature in development.
 
 Uses only Alpha Vantage for now.
 
-Data collection is done only once a day.
+Data collection is done only once a day if the setup was through my script.
 
 Data is save to "/data/data.RData". It can be accessed using 'load("/data/data.RData")'.
 
@@ -119,9 +132,12 @@ options to setup config:
 
 ## input stocks
 
-stocks to consider are to be placed in "/stocks.csv". see 'tracking companies and the investment plan they are under' for how to setup the csv.
+stocks to consider are to be placed in "/stocks.csv". see 'tracking companies and the investment
+plan they are under' for how to setup the csv.
 
-The script will read the "/stocks.csv" at the start. As the script is designed to be run fresh every time, it will reread the csv file. As such, modifications to stocks to be considered can be done on the fly.
+The script will read the "/stocks.csv" at the start. As the script is designed to be run fresh every
+time, it will reread the csv file. As such, modifications to stocks to be considered can be done on
+the fly.
 
 ## alerts
 
@@ -129,8 +145,8 @@ The script will read the "/stocks.csv" at the start. As the script is designed t
 
 You need to know R to change the alerts. Edit the file "/alerts.R".
 
-**IMPORTANT**
-Each alert needs to return a named list as such: "stck" = "condition msg". For example, one alert that comes with this stock bot is for decreasing greatly.
+**IMPORTANT** Each alert needs to return a named list as such: "stck" = "condition msg". For
+example, one alert that comes with this stock bot is for decreasing greatly.
 
 ```{R, echo = T, eval = F}
 alerts$condition2 <-
@@ -148,8 +164,11 @@ A yaml option for setting alerts may come eventually.
 
 ### keeping record of banned companies
 
-Managed using an R rds object. Holds a list of stock names as element names, representing a date. The date informs when the stock is to be taken OFF the banned list.
+Managed using an R rds object. Holds a list of stock names as element names, representing a
+date. The date informs when the stock is to be taken OFF the banned list.
 
 ### banned stocks
 
-Banned stocks are those that have triggered an alert. For example, excessive decline in price. notifications will be sent once per alert, and then ignored for a week. The program keeps track of banned stocks in the file "/banned-list.rds"
+Banned stocks are those that have triggered an alert. For example, excessive decline in
+price. notifications will be sent once per alert, and then ignored for a week. The program keeps
+track of banned stocks in the file "/banned-list.rds"

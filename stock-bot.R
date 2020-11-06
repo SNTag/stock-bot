@@ -64,24 +64,49 @@ banned.list <- reviewing_banned()
 ## sort stocks of interest from the banned
 tickers <- sorting_stocks()
 
-print("getting data <<<<<======-----")
-
 ### data collection
+## daily data
+print("getting daily data <<<<<======-----")
 alphavantager::av_api_key(config$api_key)
-data <- new.env()
-if (length(tickers) < 5) {
-    for (i in tickers) {
-    quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = data)
+data_da <- new.env()
+for (i in tickers) {
+    Sys.sleep(12.5)
+    quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = data_da, output.size = "full")
     print(i)
-    }
-} else {
+}
+save(data, file = "./data/data-da.RData")
+
+## monthly data
+if (config$monthly_boolean == 'true') {
+    print("getting monthly data <<<<<======-----")
+    data_mo <- new.env()
     for (i in tickers) {
         Sys.sleep(12.5)
-        quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = data)
+        quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = data_mo, periodicity = "monthly", output.size = "full")
         print(i)
     }
+    save(data_mo, file = "./data/data-mo.RData")
 }
-save(data, file = "./data/data.RData")
+
+## historical data
+if (config$historical_boolean == 'true') {
+    print("getting historical data <<<<<======-----")
+    data_hi <- new.env()
+    alphavantager::av_api_key(config$api_key)
+#    tickers_modified <- tickers[!(tickers %in% stuff)]
+
+    for (i in tickers) {
+        Sys.sleep(12.5)
+        tmpVar <- try(alphavantager::av_get(i, av_fun = "OVERVIEW"))
+        if (!("try-error" %in% class(tmpVar))){
+            assign(x = paste0(i), tmpVar, env = data_hi)
+            print(i)
+        } else {
+            print(paste0(i, " - failed"))
+        }
+    }
+    save(data_hi, file = "./data/data-hi.RData")
+}
 
 ### assessing conditions
 ## for (i in alerts) {
@@ -96,7 +121,7 @@ save(data, file = "./data/data.RData")
 conditions <- setting_alerts()
 stck.msgs <- c()
 for (i in tickers) {
-    tmpDat <- get(i, env = data) %>% quantmod::dailyReturn()
+    tmpDat <- get(i, env = data_da) %>% quantmod::dailyReturn()
 
     for (x in conditions) {
         tmpFunct  <- get(x, envir = alerts)
