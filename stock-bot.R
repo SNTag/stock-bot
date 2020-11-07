@@ -74,7 +74,7 @@ for (i in tickers) {
     quantmod::getSymbols(i, src = 'av', api.key = config$api_key, env = data_da, output.size = "full")
     print(i)
 }
-save(data, file = "./data/data-da.RData")
+save(data_da, file = "./data/data-da.RData")
 
 ## monthly data
 if (config$monthly_boolean == 'true') {
